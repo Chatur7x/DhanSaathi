@@ -1,0 +1,259 @@
+@use '@/styles/variables' as *;
+
+.calculators-page {
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+  height: 100%;
+  position: relative;
+}
+
+// Apple-style Bento Grid for Calculators
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $space-4;
+  padding: $space-2;
+}
+
+.calc-card {
+  position: relative;
+  height: 180px;
+  border-radius: $radius-2xl;
+  padding: $space-5;
+  cursor: pointer;
+  overflow: hidden;
+  background: $bg-card;
+  border: 1px solid $border-subtle;
+  transition: border-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--card-bg-gradient);
+    opacity: 0.1;
+    transition: opacity 0.4s ease;
+  }
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+    &::before {
+      opacity: 0.15;
+    }
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: $radius-xl;
+    background: rgba(255, 255, 255, 0.03);
+    @include flex-center;
+    margin-bottom: auto;
+    color: var(--card-accent);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  &__title {
+    font-size: $text-lg;
+    font-weight: 600;
+    margin-bottom: $space-1;
+    color: $text-primary;
+    z-index: 1;
+  }
+
+  &__desc {
+    font-size: $text-xs;
+    color: $text-muted;
+    z-index: 1;
+    line-height: 1.4;
+  }
+}
+
+// Expanded view styles
+.calc-expanded {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: $bg-primary;
+  border-radius: $radius-2xl;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--header-height) - 48px);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $space-4;
+    padding: $space-6;
+    border-bottom: 1px solid $border-subtle;
+    
+    @include responsive(sm) {
+      padding: $space-4;
+    }
+  }
+
+  &__back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: $bg-tertiary;
+    border: 1px solid $border-subtle;
+    color: $text-primary;
+    @include flex-center;
+    cursor: pointer;
+    transition: $transition-spring;
+
+    &:hover {
+      background: $bg-hover;
+      transform: scale(1.05);
+    }
+  }
+
+  &__title-group {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+  }
+
+  &__icon {
+    color: var(--card-accent);
+  }
+
+  &__title {
+    font-size: $text-2xl;
+    font-weight: 700;
+    font-family: $font-display;
+  }
+
+  &__content {
+    padding: $space-6;
+    flex: 1;
+    
+    @include responsive(sm) {
+      padding: $space-4;
+    }
+  }
+}
+
+// Reusable Calculator Layout Styles (inside expanded view)
+.calculator-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-8;
+
+  @include responsive(lg) {
+    grid-template-columns: 1fr;
+  }
+
+  &__inputs {
+    display: flex;
+    flex-direction: column;
+    gap: $space-6;
+    padding: $space-6;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: $radius-2xl;
+    border: 1px solid $border-subtle;
+  }
+
+  &__results {
+    display: flex;
+    flex-direction: column;
+    gap: $space-6;
+    padding: $space-6;
+    background: rgba(255, 255, 255, 0.01);
+    border-radius: $radius-2xl;
+    border: 1px solid $border-subtle;
+  }
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  &__label {
+    font-size: $text-sm;
+    font-weight: 500;
+    color: $text-secondary;
+  }
+
+  &__value-display {
+    font-family: $font-mono;
+    font-size: $text-base;
+    font-weight: 600;
+    color: var(--input-accent, $accent-blue);
+    background: rgba(255,255,255,0.05);
+    padding: 4px 12px;
+    border-radius: $radius-md;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+}
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $space-4;
+  border-radius: $radius-xl;
+  background: $bg-tertiary;
+  border: 1px solid $border-subtle;
+  text-align: center;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--result-accent, transparent);
+  }
+
+  &__label {
+    font-size: $text-xs;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: $space-1;
+  }
+
+  &__value {
+    font-family: $font-display;
+    font-size: $text-2xl;
+    font-weight: 700;
+    color: $text-primary;
+
+    &.highlight {
+      color: $accent-green;
+    }
+  }
+}
+
+.results-grid {
+  display: flex;
+  gap: $space-4;
+  
+  @include responsive(sm) {
+    flex-direction: column;
+  }
+}
+
+.chart-container {
+  height: 320px;
+  width: 100%;
+  margin-top: $space-4;
+}

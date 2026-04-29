@@ -1,0 +1,60 @@
+@use '@/styles/variables' as *;
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: $z-sticky;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  padding: $space-2 $space-4;
+  padding-bottom: calc(#{$space-2} + env(safe-area-inset-bottom));
+  gap: $space-2;
+
+  &__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    text-decoration: none;
+    padding: $space-2 $space-1;
+    border-radius: $radius-md;
+    transition: $transition-base;
+
+    &:active { transform: scale(0.92); }
+  }
+
+  &__icon {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    @include flex-center;
+    border-radius: $radius-md;
+    color: $text-muted;
+    transition: $transition-base;
+  }
+
+  &__icon-bg {
+    position: absolute;
+    inset: 0;
+    border-radius: $radius-md;
+  }
+
+  &__label {
+    font-size: 10px;
+    font-weight: 500;
+    color: $text-muted;
+    transition: $transition-base;
+    line-height: 1;
+  }
+
+  &__item--active &__label {
+    font-weight: 600;
+  }
+}
