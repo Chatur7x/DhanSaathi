@@ -45,7 +45,7 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
 };
 
 export default function Calculators() {
@@ -128,7 +128,7 @@ export default function Calculators() {
               {selectedCalc.component ? (
                 <selectedCalc.component />
               ) : (
-                <PlaceholderCalc name={selectedCalc.title} />
+                <div style={{padding: '2rem', color: '#9ca3af'}}>Calculator not found</div>
               )}
             </motion.div>
           </motion.div>

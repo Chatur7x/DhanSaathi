@@ -8,40 +8,53 @@ export interface MarketData {
   price: number;
   change: number;
   changePercent: number;
-  chart?: { value: number }[];
+  chart?: { time: number; open: number; high: number; low: number; close: number }[];
 }
 
+// Fetch market chart data from our server API
 export const fetchMarketChart = async (symbol: string = '^NSEI'): Promise<MarketData | null> => {
   try {
-    const res = await fetch(`/api/finance/v8/finance/chart/${symbol}?range=1mo&interval=1d`);
-    if (!res.ok) throw new Error('Network response was not ok');
+    const res = await fetch(`/api/market/historical?symbol=${symbol}&period=1M`);
+    if (!res.ok) throw new Error('Failed to fetch historical data');
     
     const data = await res.json();
-    const result = data.chart?.result?.[0];
-    if (!result) return null;
+    if (!data || data.length === 0) return null;
 
-    const meta = result.meta;
-    const price = meta.regularMarketPrice;
-    const previousClose = meta.chartPreviousClose;
-    const change = price - previousClose;
-    const changePercent = (change / previousClose) * 100;
-
-    const quotes = result.indicators?.quote?.[0]?.close || [];
-    const chart = quotes
-      .filter((v: number | null) => v !== null)
-      .map((val: number) => ({ value: Math.round(val) }));
+    const lastCandle = data[data.length - 1];
+    const firstCandle = data[0];
+    const price = lastCandle.close;
+    const change = price - firstCandle.close;
+    const changePercent = ((change / firstCandle.close) * 100);
 
     return {
-      symbol: meta.symbol,
-      name: meta.symbol === '^NSEI' ? 'NIFTY 50' : meta.symbol,
-      price: Math.round(price),
-      change: Math.round(change),
-      changePercent: Number(changePercent.toFixed(2)),
-      chart
+      symbol,
+      name: symbol.replace('^', '').replace('.NS', ''),
+      price: parseFloat(price.toFixed(2)),
+      change: parseFloat(change.toFixed(2)),
+      changePercent: parseFloat(changePercent.toFixed(2)),
+      chart: data
     };
   } catch (error) {
-    console.error("Failed to fetch real market chart:", error);
+    console.error("Failed to fetch market chart:", error);
     return null;
+  }
+};
+
+// Fetch quotes from our server API
+export const fetchQuotes = async (symbols: string[]): Promise<MarketData[]> => {
+  try {
+    const res = await fetch(`/api/market/quotes?symbols=${symbols.join(',')}`);
+    if (!res.ok) throw new Error('Failed to fetch quotes');
+    const data = await res.json();
+    return data.map((item: any) => ({
+      ...item,
+      price: parseFloat((item.price || 0).toFixed(2)),
+      change: parseFloat((item.change || 0).toFixed(2)),
+      changePercent: parseFloat((item.changePercent || 0).toFixed(2))
+    }));
+  } catch (error) {
+    console.error("Failed to fetch quotes:", error);
+    return [];
   }
 };
 
@@ -55,7 +68,7 @@ export const fetchLiveNews = async () => {
     return data.items.slice(0, 5).map((item: any) => ({
       id: item.guid || Math.random().toString(),
       headline: item.title,
-      summary: item.description.replace(/<[^>]*>?/gm, '').substring(0, 100) + '...',
+      summary: item.description.replace(/<[^>]*>/gm, '').substring(0, 100) + '...',
       source: 'Economic Times',
       time: new Date(item.pubDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       link: item.link,

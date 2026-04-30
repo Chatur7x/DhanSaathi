@@ -2,7 +2,8 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, TrendingUp, Briefcase, Calculator,
-  BookOpen, Brain, Settings, ChevronLeft, ChevronRight, Zap
+  BookOpen, Brain, Settings, ChevronLeft, ChevronRight, Zap,
+  BarChart3, Bell
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import './Sidebar.scss';
@@ -10,6 +11,11 @@ import './Sidebar.scss';
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, color: '#3b82f6' },
   { to: '/markets', label: 'Markets', icon: TrendingUp, color: '#10b981' },
+  { to: '/fo', label: 'F&O', icon: BarChart3, color: '#f59e0b' },
+  { to: '/screener', label: 'Screener', icon: BarChart3, color: '#8b5cf6' },
+  { to: '/bar-replay', label: 'Bar Replay', icon: Zap, color: '#f59e0b' },
+  { to: '/multi-chart', label: 'Multi-Chart', icon: BarChart3, color: '#06b6d4' },
+  { to: '/alerts', label: 'Alerts', icon: Bell, color: '#ef4444' },
   { to: '/portfolio', label: 'Portfolio', icon: Briefcase, color: '#f59e0b' },
   { to: '/calculators', label: 'Calculators', icon: Calculator, color: '#8b5cf6' },
   { to: '/knowledge', label: 'Knowledge', icon: BookOpen, color: '#06b6d4' },

@@ -1,177 +1,129 @@
-import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, BookOpen, RefreshCcw, Briefcase, Layers, TrendingUp, Activity, ChevronRight, X } from 'lucide-react';
-import { KNOWLEDGE_TOPICS, GLOSSARY } from '../data/knowledgeData';
-import type { Topic } from '../data/knowledgeData';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { BookOpen, TrendingUp, Wallet, BarChart3, LineChart, ArrowLeft } from 'lucide-react';
 
-const iconMap: Record<string, React.ReactNode> = {
-  RefreshCcw: <RefreshCcw size={24} />,
-  Briefcase: <Briefcase size={24} />,
-  Layers: <Layers size={24} />,
-  TrendingUp: <TrendingUp size={24} />,
-  Activity: <Activity size={24} />
-};
+const TOPICS = [
+  {
+    id: 'sip', title: 'SIP (Systematic Investment Plan)',
+    icon: TrendingUp, color: '#3b82f6',
+    articles: [
+      { title: 'What is SIP?', content: 'SIP allows you to invest a fixed amount regularly in mutual funds. It averages out market volatility through rupee cost averaging.' },
+      { title: 'Power of Compounding', content: 'Even small SIPs can grow significantly over time. ₹5,000/month at 12% for 20 years = ₹49.7L (invested: ₹12L)' },
+      { title: 'SIP vs Lumpsum', content: 'SIP reduces timing risk. In volatile markets, SIP often outperforms lumpsum investments.' },
+      { title: 'Step-up SIP', content: 'Increase your SIP amount annually (e.g., 10% yearly) to beat inflation and accelerate wealth creation.' }
+    ]
+  },
+  {
+    id: 'mutual-funds', title: 'Mutual Funds',
+    icon: Wallet, color: '#10b981',
+    articles: [
+      { title: 'Types of Mutual Funds', content: 'Equity (stocks), Debt (bonds), Hybrid (mix), ELSS (tax-saving). Choose based on risk appetite and goals.' },
+      { title: 'NAV Explained', content: 'Net Asset Value = (Total Assets - Liabilities) / Number of units. NAV changes daily based on underlying asset prices.' },
+      { title: 'Direct vs Regular Plans', content: 'Direct plans have lower expense ratios (no distributor commission). Save 1-1.5% annually with Direct plans.' },
+      { title: 'Expense Ratio', content: 'Annual fee charged by fund houses. Lower is better. Equity funds typically charge 0.5-2.5%. SEBI caps at 2.5%.' }
+    ]
+  },
+  {
+    id: 'etf', title: 'ETFs (Exchange Traded Funds)',
+    icon: BarChart3, color: '#f59e0b',
+    articles: [
+      { title: 'How ETFs Work', content: 'ETFs trade like stocks on exchanges. They track an index (Nifty 50, Gold, etc.) and have lower expense ratios than mutual funds.' },
+      { title: 'Gold ETFs', content: 'Invest in gold without physical storage. 1 unit = 1 gram gold. More liquid than physical gold. No making charges.' },
+      { title: 'Nifty/Sensex ETFs', content: 'Low-cost way to invest in entire market indices. Expense ratio typically 0.05-0.5% vs 1-2.5% for index funds.' }
+    ]
+  },
+  {
+    id: 'stocks', title: 'Stock Investing',
+    icon: LineChart, color: '#8b5cf6',
+    articles: [
+      { title: 'Fundamental Analysis', content: 'Analyze P/E ratio, P/B ratio, debt-to-equity, ROE, and revenue growth to evaluate stocks.' },
+      { title: 'Market Cap Classes', content: 'Large Cap (₹20,000Cr+), Mid Cap (₹5,000-20,000Cr), Small Cap (<₹5,000Cr). Higher cap = lower risk.' },
+      { title: 'Candlestick Patterns', content: 'Doji, Hammer, Engulfing patterns help predict price movements. Use with volume analysis for better accuracy.' }
+    ]
+  },
+  {
+    id: 'fno', title: 'F&O (Futures & Options)',
+    icon: BarChart3, color: '#ef4444',
+    articles: [
+      { title: 'Futures Basics', content: 'Agreement to buy/sell at predetermined price on a future date. Requires margin money. High risk, high reward.' },
+      { title: 'Options - Call & Put', content: 'Call = right to buy at strike price. Put = right to sell at strike price. Options premium = cost of the contract.' },
+      { title: 'Greeks Explained', content: 'Delta (price sensitivity), Gamma (delta change), Theta (time decay), Vega (volatility impact). Master Greeks to trade options profitably.' },
+      { title: 'Margin Requirements', content: 'SPAN + Exposure margin needed. For Nifty, ~₹1.2L per lot. Use margin calculator before trading.' }
+    ]
+  }
+];
 
 export default function Knowledge() {
-  const [activeTab, setActiveTab] = useState<'topics' | 'glossary'>('topics');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [expandedArticle, setExpandedArticle] = useState<number | null>(null);
 
-  const filteredGlossary = useMemo(() => {
-    if (!searchQuery) return GLOSSARY;
-    const lowerQ = searchQuery.toLowerCase();
-    return GLOSSARY.filter(item => 
-      item.term.toLowerCase().includes(lowerQ) || 
-      item.definition.toLowerCase().includes(lowerQ) ||
-      item.category.toLowerCase().includes(lowerQ)
-    );
-  }, [searchQuery]);
+  const topic = TOPICS.find(t => t.id === selectedTopic);
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '4rem' }}>
-      
-      {/* Header and Tabs */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div className="tabs" style={{ width: 'fit-content' }}>
-          <button 
-            className={`tabs__tab ${activeTab === 'topics' ? 'active' : ''}`}
-            onClick={() => setActiveTab('topics')}
-          >
-            <BookOpen size={16} /> Topics
-          </button>
-          <button 
-            className={`tabs__tab ${activeTab === 'glossary' ? 'active' : ''}`}
-            onClick={() => setActiveTab('glossary')}
-          >
-            <Search size={16} /> Glossary
-          </button>
+  if (selectedTopic && topic) {
+    return (
+      <div style={{ paddingBottom: '4rem' }}>
+        <button 
+          onClick={() => setSelectedTopic(null)}
+          style={{ background: 'none', border: 'none', color: 'var(--accent-blue)', cursor: 'pointer', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+        >
+          <ArrowLeft size={16} /> Back to Topics
+        </button>
+        <h1 style={{ fontSize: '2rem', color: 'var(--text-primary)', marginBottom: '2rem' }}>{topic.title}</h1>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {topic.articles.map((article, i) => (
+            <motion.div
+              key={i}
+              className="glass-card"
+              style={{ padding: '1.5rem', cursor: 'pointer' }}
+              onClick={() => setExpandedArticle(expandedArticle === i ? null : i)}
+              whileHover={{ y: -2 }}
+            >
+              <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{article.title}</h3>
+              {expandedArticle === i && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}
+                >
+                  {article.content}
+                </motion.div>
+              )}
+            </motion.div>
+          ))}
         </div>
       </div>
+    );
+  }
 
-      <AnimatePresence mode="wait">
-        {activeTab === 'topics' && !selectedTopic && (
-          <motion.div 
-            key="topics-grid"
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}
-          >
-            {KNOWLEDGE_TOPICS.map(topic => (
-              <motion.div 
-                key={topic.id}
-                className="glass-card interactive"
-                whileHover={{ y: -4, borderColor: 'rgba(255,255,255,0.2)' }}
-                onClick={() => setSelectedTopic(topic)}
-                style={{ display: 'flex', flexDirection: 'column', gap: '1rem', cursor: 'pointer' }}
-              >
-                <div style={{ 
-                  width: '48px', height: '48px', borderRadius: '12px', 
-                  background: `linear-gradient(135deg, ${topic.color}22 0%, ${topic.color}11 100%)`,
-                  border: `1px solid ${topic.color}44`,
-                  color: topic.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  {iconMap[topic.icon]}
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{topic.title}</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: '1.5' }}>{topic.description}</p>
-                </div>
-                <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', justifyContent: 'flex-end', color: 'var(--text-muted)' }}>
-                  <ChevronRight size={20} />
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-
-        {activeTab === 'topics' && selectedTopic && (
+  return (
+    <div style={{ paddingBottom: '4rem' }}>
+      <h1 style={{ fontSize: '2rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Knowledge Hub</h1>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Learn everything about Indian financial instruments</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+        {TOPICS.map((topic, i) => (
           <motion.div
-            key="topic-detail"
-            initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
+            key={topic.id}
             className="glass-card"
-            style={{ position: 'relative', overflow: 'hidden' }}
+            style={{ padding: '1.5rem', cursor: 'pointer' }}
+            onClick={() => setSelectedTopic(topic.id)}
+            whileHover={{ y: -4, scale: 1.02 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
           >
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: selectedTopic.color }} />
-            
-            <button 
-              className="btn btn--ghost btn--icon" 
-              style={{ position: 'absolute', top: '1rem', right: '1rem' }}
-              onClick={() => setSelectedTopic(null)}
-            >
-              <X size={24} />
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', marginTop: '1rem' }}>
-              <div style={{ color: selectedTopic.color }}>{iconMap[selectedTopic.icon]}</div>
-              <h2 style={{ color: 'var(--text-primary)' }}>{selectedTopic.title}</h2>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {selectedTopic.content.map((paragraph, idx) => (
-                <p key={idx} style={{ color: 'var(--text-secondary)', lineHeight: '1.7', fontSize: '1.05rem' }}>
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-            
-            <button 
-              className="btn btn--secondary" 
-              style={{ marginTop: '2rem' }}
-              onClick={() => setSelectedTopic(null)}
-            >
-              Back to Topics
-            </button>
+            <topic.icon size={32} color={topic.color} />
+            <h3 style={{ color: 'var(--text-primary)', marginTop: '1rem', marginBottom: '0.5rem' }}>{topic.title}</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+              {topic.articles.length} articles · Click to explore
+            </p>
           </motion.div>
-        )}
-
-        {activeTab === 'glossary' && (
-          <motion.div 
-            key="glossary-view"
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-            style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
-          >
-            <div style={{ position: 'relative', maxWidth: '400px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input 
-                type="text" 
-                className="input" 
-                placeholder="Search financial terms..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: '2.5rem' }}
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-              <AnimatePresence>
-                {filteredGlossary.map(item => (
-                  <motion.div 
-                    key={item.term}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                    className="glass-card"
-                    style={{ padding: '1.5rem' }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                      <h4 style={{ color: 'var(--text-primary)', fontSize: '1.125rem', fontWeight: 600 }}>{item.term}</h4>
-                      <span className="badge badge--blue" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{item.category}</span>
-                    </div>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: '1.5' }}>
-                      {item.definition}
-                    </p>
-                  </motion.div>
-                ))}
-                {filteredGlossary.length === 0 && (
-                  <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', padding: '1rem' }}>
-                    No terms found matching "{searchQuery}"
-                  </p>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+        ))}
+      </div>
+      <div className="glass-card" style={{ padding: '1.5rem', marginTop: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+        <BookOpen size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+        <p>Quiz system, glossary search, and progress tracking coming soon!</p>
+        <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>SEBI disclaimers: Past performance does not guarantee future results.</p>
+      </div>
     </div>
   );
 }
