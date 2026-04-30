@@ -1,10 +1,14 @@
+import { io } from 'socket.io-client';
+
+export const socket = io('http://localhost:5000'); // Connect to Node.js backend
+
 export interface MarketData {
   symbol: string;
   name: string;
   price: number;
   change: number;
   changePercent: number;
-  chart: { value: number }[];
+  chart?: { value: number }[];
 }
 
 export const fetchMarketChart = async (symbol: string = '^NSEI'): Promise<MarketData | null> => {
@@ -40,27 +44,6 @@ export const fetchMarketChart = async (symbol: string = '^NSEI'): Promise<Market
     return null;
   }
 };
-
-export const fetchQuotes = async (symbols: string[]): Promise<Omit<MarketData, 'chart'>[]> => {
-  try {
-    const res = await fetch(`/api/finance/v7/finance/quote?symbols=${symbols.join(',')}`);
-    if (!res.ok) throw new Error('Network response was not ok');
-    
-    const data = await res.json();
-    const results = data.quoteResponse?.result || [];
-    
-    return results.map((quote: any) => ({
-      symbol: quote.symbol,
-      name: quote.shortName || quote.longName || quote.symbol,
-      price: quote.regularMarketPrice,
-      change: quote.regularMarketChange,
-      changePercent: Number((quote.regularMarketChangePercent).toFixed(2))
-    }));
-  } catch (error) {
-    console.error("Failed to fetch quotes:", error);
-    return [];
-  }
-}
 
 export const fetchLiveNews = async () => {
   try {

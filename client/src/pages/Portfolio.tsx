@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getRealPortfolio } from '@/services/api';
-import { formatCurrency, formatPercent } from '@/utils/formatters';
+import { getRealPortfolio } from '../services/api';
+import { formatCurrency, formatPercent } from '../utils/formatters';
 import { motion } from 'framer-motion';
 import { Wallet, TrendingUp } from 'lucide-react';
 

@@ -1,10 +1,10 @@
-import { formatCurrency, formatPercent, formatCompact, isPositive } from '@/utils/formatters';
+import { formatCurrency, formatPercent, formatCompact, isPositive } from '../utils/formatters';
 import { ArrowUpRight, ArrowDownRight, Activity, TrendingUp, Wallet, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from 'react';
-import { fetchMarketChart, fetchQuotes, fetchLiveNews, getRealPortfolio } from '@/services/api';
-import type { MarketData } from '@/services/api';
+import { fetchMarketChart, fetchLiveNews, getRealPortfolio, socket } from '../services/api';
+import type { MarketData } from '../services/api';
 import './Dashboard.scss';
 
 const containerVariants = {
@@ -14,7 +14,7 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
+  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 25 } }
 };
 
 export default function Dashboard() {
@@ -24,9 +24,32 @@ export default function Dashboard() {
   const portfolio = getRealPortfolio();
 
   useEffect(() => {
+    // Fetch initial chart history for NIFTY 50
     fetchMarketChart('^NSEI').then(data => data && setMarketData(data));
-    fetchQuotes(['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS']).then(q => setQuotes(q));
     fetchLiveNews().then(news => setLiveNews(news));
+
+    // Listen to live WebSocket updates
+    const handleMarketUpdate = (data: Omit<MarketData, 'chart'>[]) => {
+      // Update the 4 specific quotes
+      setQuotes(data.filter(item => ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS'].includes(item.symbol)));
+      
+      // Update Nifty 50 live price if it exists
+      const nifty = data.find(item => item.symbol === '^NSEI');
+      if (nifty) {
+        setMarketData(prev => prev ? {
+          ...prev,
+          price: nifty.price,
+          change: nifty.change,
+          changePercent: nifty.changePercent
+        } : null);
+      }
+    };
+
+    socket.on('marketUpdate', handleMarketUpdate);
+
+    return () => {
+      socket.off('marketUpdate', handleMarketUpdate);
+    };
   }, []);
 
   const displayValue = marketData ? marketData.price : 0;

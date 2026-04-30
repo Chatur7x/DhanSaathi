@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchLiveNews } from '@/services/api';
+import { fetchLiveNews } from '../services/api';
 import { motion } from 'framer-motion';
 import { Zap, Clock, ExternalLink } from 'lucide-react';
 

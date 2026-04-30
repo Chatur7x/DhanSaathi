@@ -5,6 +5,7 @@ import Calculators from './pages/calculators/Calculators';
 import Markets from './pages/Markets';
 import Portfolio from './pages/Portfolio';
 import AIInsights from './pages/AIInsights';
+import Knowledge from './pages/Knowledge';
 
 // Placeholder components for other pages
 const Placeholder = ({ title }: { title: string }) => (
@@ -23,7 +24,7 @@ function App() {
           <Route path="markets" element={<Markets />} />
           <Route path="portfolio" element={<Portfolio />} />
           <Route path="calculators" element={<Calculators />} />
-          <Route path="knowledge" element={<Placeholder title="Knowledge Hub" />} />
+          <Route path="knowledge" element={<Knowledge />} />
           <Route path="ai-insights" element={<AIInsights />} />
           <Route path="settings" element={<Placeholder title="Settings" />} />
           <Route path="*" element={<Placeholder title="404 - Not Found" />} />

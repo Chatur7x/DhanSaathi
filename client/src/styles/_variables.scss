@@ -85,11 +85,11 @@ $shadow-glow-blue: 0 0 30px rgba(59, 130, 246, 0.3);
 $shadow-glow-green: 0 0 30px rgba(16, 185, 129, 0.3);
 $shadow-glow-purple: 0 0 30px rgba(139, 92, 246, 0.3);
 
-// Transitions
-$transition-fast: all 0.15s ease;
-$transition-base: all 0.25s ease;
-$transition-slow: all 0.4s ease;
-$transition-spring: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+// Transitions (Ultra-snappy Apple-like feel)
+$transition-fast: all 0.1s cubic-bezier(0.2, 0.8, 0.2, 1);
+$transition-base: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+$transition-slow: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+$transition-spring: all 0.2s cubic-bezier(0.2, 1.2, 0.3, 1);
 
 // Breakpoints
 $bp-xs: 360px;
