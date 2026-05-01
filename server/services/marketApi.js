@@ -1,4 +1,5 @@
-const yahooFinance = require('yahoo-finance2').default;
+const YahooFinance = require('yahoo-finance2').default;
+const yahooFinance = new YahooFinance();
 
 // Fetch real-time quotes for multiple symbols
 exports.getQuotes = async (symbols) => {

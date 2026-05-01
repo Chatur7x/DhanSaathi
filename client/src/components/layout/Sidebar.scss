@@ -58,6 +58,8 @@
     @include flex-col;
     gap: $space-1;
     flex: 1;
+    overflow-y: auto;
+    @include scrollbar-hide;
   }
 
   &__nav-item {

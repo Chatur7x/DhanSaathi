@@ -1,0 +1,256 @@
+// Styles are injected via Vite's scss additionalData
+
+// ============================================
+// AI Chatbot Floating Widget
+// ============================================
+
+.chatbot-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: $gradient-primary;
+  color: $text-primary;
+  border: none;
+  cursor: pointer;
+  @include flex-center;
+  box-shadow: 0 4px 20px rgba(10, 132, 255, 0.4);
+
+  &__badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: $accent-green;
+    color: #000;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: $radius-full;
+  }
+
+  @include responsive(md) {
+    bottom: calc(#{$bottom-nav-height} + 16px);
+  }
+}
+
+.chatbot {
+  position: fixed;
+  bottom: 96px;
+  right: 24px;
+  z-index: 999;
+  width: 380px;
+  max-height: 520px;
+  background: $bg-secondary;
+  border: 1px solid $border-medium;
+  border-radius: $radius-2xl;
+  @include flex-col;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+
+  @include responsive(md) {
+    bottom: calc(#{$bottom-nav-height} + 72px);
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: 60vh;
+  }
+
+  &__header {
+    @include flex-between;
+    padding: $space-4;
+    background: linear-gradient(135deg, rgba(10, 132, 255, 0.15), rgba(191, 90, 242, 0.1));
+    border-bottom: 1px solid $border-subtle;
+  }
+
+  &__header-info {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+  }
+
+  &__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: $gradient-primary;
+    @include flex-center;
+    color: white;
+  }
+
+  &__title {
+    font-weight: 700;
+    color: $text-primary;
+    font-size: $text-sm;
+  }
+
+  &__subtitle {
+    font-size: 0.7rem;
+    color: $text-secondary;
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    color: $text-muted;
+    cursor: pointer;
+    padding: $space-2;
+    border-radius: $radius-md;
+    &:hover { background: $bg-hover; color: $text-primary; }
+  }
+
+  &__messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: $space-4;
+    @include flex-col;
+    gap: $space-3;
+    @include scrollbar-thin;
+    min-height: 200px;
+    max-height: 320px;
+  }
+
+  &__msg {
+    display: flex;
+    gap: $space-2;
+    max-width: 90%;
+
+    &--user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+
+      .chatbot__msg-content {
+        background: $accent-blue;
+        color: white;
+        border-radius: $radius-lg $radius-lg 4px $radius-lg;
+      }
+
+      .chatbot__msg-icon {
+        background: rgba(10, 132, 255, 0.2);
+        color: $accent-blue;
+      }
+    }
+
+    &--assistant {
+      align-self: flex-start;
+
+      .chatbot__msg-content {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid $border-subtle;
+        color: $text-secondary;
+        border-radius: $radius-lg $radius-lg $radius-lg 4px;
+      }
+
+      .chatbot__msg-icon {
+        background: rgba(191, 90, 242, 0.2);
+        color: $accent-purple;
+      }
+    }
+  }
+
+  &__msg-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    @include flex-center;
+    flex-shrink: 0;
+  }
+
+  &__msg-content {
+    padding: $space-3;
+    border-radius: $radius-lg;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    word-break: break-word;
+  }
+
+  &__typing {
+    display: flex;
+    gap: 4px;
+    padding: $space-3;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid $border-subtle;
+    border-radius: $radius-lg $radius-lg $radius-lg 4px;
+
+    span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: $text-muted;
+      animation: typingBounce 1.4s ease-in-out infinite;
+      &:nth-child(2) { animation-delay: 0.2s; }
+      &:nth-child(3) { animation-delay: 0.4s; }
+    }
+  }
+
+  &__quick {
+    padding: 0 $space-4 $space-3;
+    display: flex;
+    gap: $space-2;
+    flex-wrap: wrap;
+  }
+
+  &__quick-btn {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: $radius-full;
+    padding: $space-1 $space-3;
+    font-size: 0.7rem;
+    color: $accent-blue;
+    cursor: pointer;
+    transition: $transition-fast;
+    white-space: nowrap;
+
+    &:hover {
+      background: rgba(59, 130, 246, 0.2);
+    }
+  }
+
+  &__input-bar {
+    display: flex;
+    gap: $space-2;
+    padding: $space-3 $space-4;
+    border-top: 1px solid $border-subtle;
+    background: $bg-tertiary;
+
+    input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: $text-primary;
+      font-family: $font-primary;
+      font-size: $text-sm;
+
+      &::placeholder { color: $text-muted; }
+    }
+  }
+
+  &__send {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: $gradient-primary;
+    border: none;
+    color: white;
+    cursor: pointer;
+    @include flex-center;
+    transition: $transition-spring;
+    flex-shrink: 0;
+
+    &:disabled { opacity: 0.3; cursor: not-allowed; }
+    &:not(:disabled):hover { transform: scale(1.1); }
+  }
+}
+
+@keyframes typingBounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-6px); }
+}
+
+// Spin animation for refresh buttons
+.spin {
+  animation: spin 1s linear infinite;
+}

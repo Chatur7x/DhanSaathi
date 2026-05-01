@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import Header from './Header';
+import AIChatbot from '../ai/AIChatbot';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import './Layout.scss';
@@ -21,10 +22,15 @@ export default function Layout() {
     const path = location.pathname;
     if (path === '/') return { title: 'Dashboard', subtitle: 'Overview of your wealth' };
     if (path.startsWith('/markets')) return { title: 'Markets', subtitle: 'Live Indian indices & stocks' };
+    if (path.startsWith('/portfolio-doctor')) return { title: 'Portfolio Doctor', subtitle: 'AI-powered health analysis' };
     if (path.startsWith('/portfolio')) return { title: 'Portfolio', subtitle: 'Your holdings & performance' };
     if (path.startsWith('/calculators')) return { title: 'Calculators', subtitle: 'Smart financial tools' };
     if (path.startsWith('/knowledge')) return { title: 'Knowledge', subtitle: 'Learn market basics' };
     if (path.startsWith('/ai-insights')) return { title: 'AI Insights', subtitle: 'Market intelligence engine' };
+    if (path.startsWith('/trade-signals')) return { title: 'Trade Signals', subtitle: 'AI news-to-signal pipeline' };
+    if (path.startsWith('/goals')) return { title: 'Goal Planner', subtitle: 'Plan your financial goals' };
+    if (path.startsWith('/paper-trading')) return { title: 'Paper Trading', subtitle: 'Practice with virtual money' };
+    if (path.startsWith('/academy')) return { title: 'Academy', subtitle: 'Learn & earn XP' };
     if (path.startsWith('/settings')) return { title: 'Settings', subtitle: 'Manage your app preferences' };
     return { title: 'DhanSaathi', subtitle: 'Your Wealth Companion' };
   };
@@ -57,6 +63,9 @@ export default function Layout() {
 
       {/* Bottom Nav for Mobile/Android */}
       {isMobile && <BottomNav />}
+
+      {/* AI Chatbot — always visible */}
+      <AIChatbot />
     </div>
   );
 }

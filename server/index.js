@@ -5,6 +5,11 @@ const cors = require('cors');
 const path = require('path');
 const marketApi = require('./services/marketApi');
 
+// Route imports
+const aiRoutes = require('./routes/ai');
+const authRoutes = require('./routes/auth');
+const paperTradingRoutes = require('./routes/paperTrading');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -17,7 +22,16 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Market data routes
+// ============================================
+// Mounted API Routes
+// ============================================
+app.use('/api/ai', aiRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/paper-trading', paperTradingRoutes);
+
+// ============================================
+// Market Data Routes (inline)
+// ============================================
 app.get('/api/market/quotes', async (req, res) => {
   try {
     const symbols = (req.query.symbols || '').split(',').filter(Boolean);
@@ -97,5 +111,9 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} with LIVE mock data`);
+  console.log(`DhanSaathi Server running on port ${PORT}`);
+  console.log(`  → AI Routes:       /api/ai/*`);
+  console.log(`  → Auth Routes:     /api/auth/*`);
+  console.log(`  → Paper Trading:   /api/paper-trading/*`);
+  console.log(`  → Market Data:     /api/market/*`);
 });

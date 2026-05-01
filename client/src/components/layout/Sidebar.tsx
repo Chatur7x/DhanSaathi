@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, TrendingUp, Briefcase, Calculator,
   BookOpen, Brain, Settings, ChevronLeft, ChevronRight, Zap,
-  BarChart3, Bell
+  BarChart3, Bell, Activity, Target, Play, GraduationCap, Sparkles
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import './Sidebar.scss';
@@ -17,7 +17,12 @@ const NAV_ITEMS = [
   { to: '/multi-chart', label: 'Multi-Chart', icon: BarChart3, color: '#06b6d4' },
   { to: '/alerts', label: 'Alerts', icon: Bell, color: '#ef4444' },
   { to: '/portfolio', label: 'Portfolio', icon: Briefcase, color: '#f59e0b' },
+  { to: '/portfolio-doctor', label: 'Portfolio Doctor', icon: Activity, color: '#bf5af2' },
+  { to: '/goals', label: 'Goal Planner', icon: Target, color: '#3b82f6' },
   { to: '/calculators', label: 'Calculators', icon: Calculator, color: '#8b5cf6' },
+  { to: '/trade-signals', label: 'Trade Signals', icon: Sparkles, color: '#ff9f0a' },
+  { to: '/paper-trading', label: 'Paper Trading', icon: Play, color: '#10b981' },
+  { to: '/academy', label: 'Academy', icon: GraduationCap, color: '#f59e0b' },
   { to: '/knowledge', label: 'Knowledge', icon: BookOpen, color: '#06b6d4' },
   { to: '/ai-insights', label: 'AI Insights', icon: Brain, color: '#ec4899' },
 ];
