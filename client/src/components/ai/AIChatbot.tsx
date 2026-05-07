@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Bot, User, Sparkles } from 'lucide-react';
 import './AIChatbot.scss';
+import { API_BASE } from '../../config';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -35,7 +36,7 @@ export default function AIChatbot() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/ai/chat', {
+      const res = await fetch(`${API_BASE}/api/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

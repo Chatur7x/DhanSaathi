@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMarketStore } from '../../store/marketStore';
+import { API_BASE } from '../../config';
 
 const OptionChain: React.FC<{ symbol?: string }> = ({ symbol = 'NIFTY' }) => {
   const [expiry, setExpiry] = useState('');
@@ -15,7 +16,7 @@ const OptionChain: React.FC<{ symbol?: string }> = ({ symbol = 'NIFTY' }) => {
   const fetchOptionChain = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/market/option-chain?symbol=${symbol}`);
+      const res = await fetch(`${API_BASE}/api/market/option-chain?symbol=${symbol}`);
       const data = await res.json();
       setCalls(data.calls || []);
       setPuts(data.puts || []);

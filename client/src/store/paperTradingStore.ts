@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { API_BASE } from '../config';
 
 export interface PaperHolding {
   symbol: string;
@@ -43,7 +44,7 @@ interface PaperTradingState {
   deleteSession: (id: string) => Promise<void>;
 }
 
-const API = '/api/paper-trading';
+const API = `${API_BASE}/api/paper-trading`;
 
 export const usePaperTradingStore = create<PaperTradingState>((set, get) => ({
   sessions: [],

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Zap, RefreshCw, ArrowUpRight, AlertTriangle } from 'lucide-react';
+import { API_BASE } from '../config';
 
 interface Signal {
   headline: string;
@@ -24,7 +25,7 @@ export default function TradeSignals() {
   const fetchSignals = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/ai/trade-signals');
+      const res = await fetch(`${API_BASE}/api/ai/trade-signals`);
       const json = await res.json();
       setData(json);
     } catch { setData(null); }

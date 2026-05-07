@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
+import { API_BASE } from '../config';
 
-export const socket = io('http://localhost:5000'); // Connect to Node.js backend
+export const socket = io(API_BASE); // Connect to Node.js backend
 
 export interface MarketData {
   symbol: string;
@@ -14,7 +15,7 @@ export interface MarketData {
 // Fetch market chart data from our server API
 export const fetchMarketChart = async (symbol: string = '^NSEI'): Promise<MarketData | null> => {
   try {
-    const res = await fetch(`/api/market/historical?symbol=${symbol}&period=1M`);
+    const res = await fetch(`${API_BASE}/api/market/historical?symbol=${symbol}&period=1M`);
     if (!res.ok) throw new Error('Failed to fetch historical data');
     
     const data = await res.json();
@@ -43,7 +44,7 @@ export const fetchMarketChart = async (symbol: string = '^NSEI'): Promise<Market
 // Fetch quotes from our server API
 export const fetchQuotes = async (symbols: string[]): Promise<MarketData[]> => {
   try {
-    const res = await fetch(`/api/market/quotes?symbols=${symbols.join(',')}`);
+    const res = await fetch(`${API_BASE}/api/market/quotes?symbols=${symbols.join(',')}`);
     if (!res.ok) throw new Error('Failed to fetch quotes');
     const data = await res.json();
     return data.map((item: any) => ({

@@ -1,5 +1,6 @@
 import { UTCTimestamp } from 'lightweight-charts';
 import { fetchMarketChart } from '../services/api';
+import { API_BASE } from '../config';
 
 export interface Quote {
   symbol: string;
@@ -22,7 +23,7 @@ export interface Candle {
 // Fetch real-time quotes
 export const getQuotes = async (symbols: string[]): Promise<Quote[]> => {
   try {
-    const res = await fetch(`/api/market/quotes?symbols=${symbols.join(',')}`);
+    const res = await fetch(`${API_BASE}/api/market/quotes?symbols=${symbols.join(',')}`);
     if (res.ok) return res.json();
     return [];
   } catch {
@@ -37,7 +38,7 @@ export const getHistoricalData = async (
 ): Promise<Candle[]> => {
   try {
     // Use our server API
-    const res = await fetch(`/api/market/historical?symbol=${symbol}&period=${timeframe}`);
+    const res = await fetch(`${API_BASE}/api/market/historical?symbol=${symbol}&period=${timeframe}`);
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {

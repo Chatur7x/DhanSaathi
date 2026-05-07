@@ -4,6 +4,7 @@ import { usePortfolioStore } from '../store/portfolioStore';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { Activity, Shield, AlertTriangle, TrendingUp, PieChart, Brain, RefreshCw, CheckCircle, XCircle, Info } from 'lucide-react';
 import { PieChart as RPieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { API_BASE } from '../config';
 
 interface PortfolioAnalysis {
   healthScore: number;
@@ -25,7 +26,7 @@ export default function PortfolioDoctor() {
   const runAnalysis = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/ai/portfolio-doctor', {
+      const res = await fetch(`${API_BASE}/api/ai/portfolio-doctor`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
