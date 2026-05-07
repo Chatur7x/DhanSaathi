@@ -1,5 +1,9 @@
 # DhanSaathi - TradingView-Style Financial Terminal
 
+## 🌍 Live Deployment
+- **Production App**: [https://dhan-saathi.vercel.app](https://dhan-saathi.vercel.app)
+- **Deployment URL**: [https://dhan-saathi-mmm5chgba-chatur7xs-projects.vercel.app](https://dhan-saathi-mmm5chgba-chatur7xs-projects.vercel.app)
+
 ## 🚀 Features Built So Far
 
 ### Core Infrastructure

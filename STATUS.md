@@ -1,5 +1,9 @@
 # FINAL STATUS - DhanSaathi Trading Terminal
 
+## 🌍 Live Deployment
+- **Production App**: [https://dhan-saathi.vercel.app](https://dhan-saathi.vercel.app)
+- **Deployment URL**: [https://dhan-saathi-mmm5chgba-chatur7xs-projects.vercel.app](https://dhan-saathi-mmm5chgba-chatur7xs-projects.vercel.app)
+
 ## ✓ ALL CONNECTIONS WORKING
 
 ### Server (http://localhost:5000)

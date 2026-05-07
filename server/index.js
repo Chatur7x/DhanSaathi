@@ -11,7 +11,28 @@ const authRoutes = require('./routes/auth');
 const paperTradingRoutes = require('./routes/paperTrading');
 
 const app = express();
-app.use(cors());
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5000',
+  'https://dhan-saathi.vercel.app',
+  'https://dhan-saathi-mmm5chgba-chatur7xs-projects.vercel.app'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const clientDist = path.join(__dirname, '../client/dist');
@@ -69,7 +90,16 @@ app.use((req, res) => {
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] }
+  cors: { 
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST'] 
+  }
 });
 
 // Mock data for demo
