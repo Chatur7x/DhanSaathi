@@ -2,26 +2,20 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, ArrowDownRight, Activity, Brain, TrendingUp, Wallet, Zap, BarChart3 } from "lucide-react";
-import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import { TradingViewChart } from "@/components/premium/trading-view-chart";
 import { GlowCard } from "@/components/premium/glow-card";
 import { AnimatedCounter, LivePulse } from "@/components/premium/animated-counter";
 import { AppShell } from "@/components/layout/app-shell";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getPortfolioSummary, getMarketIndices } from "@/lib/api";
+import { getPortfolioSummary, getMarketIndices, getHistoricalData } from "@/lib/api";
 import { io } from "socket.io-client";
 import { WS_URL } from "@/lib/api-config";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.07 } } };
 const item = { hidden: { opacity: 0, y: 20, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring" as const, stiffness: 300, damping: 25 } } };
 
-// Simulated chart data for now, real sparklines would come from backend
-const generateChart = () => Array.from({ length: 30 }, (_, i) => ({
-  time: i, value: 22000 + Math.sin(i * 0.3) * 400 + Math.random() * 200
-}));
-
 export default function DashboardPage() {
-  const [chartData] = useState(generateChart);
   const [niftyRealtime, setNiftyRealtime] = useState<{ price: number, change: number } | null>(null);
 
   const { data: portfolio } = useQuery({
@@ -41,12 +35,34 @@ export default function DashboardPage() {
     ]
   });
 
+  const { data: historical } = useQuery({
+    queryKey: ["historical", "^NSEI"],
+    queryFn: () => getHistoricalData("^NSEI", "1mo"),
+  });
+
+  const chartData = useMemo(() => {
+    if (historical && Array.isArray(historical) && historical.length > 0) {
+      return historical.map((h: any) => ({
+        time: Math.floor(new Date(h.date).getTime() / 1000),
+        value: h.close || h.price,
+      }));
+    }
+    // Fallback static data if Yahoo Finance doesn't return anything
+    const now = Math.floor(Date.now() / 1000);
+    return Array.from({ length: 30 }, (_, i) => ({
+      time: now - (30 - i) * 86400, 
+      value: 22000 + Math.sin(i * 0.3) * 400 + Math.random() * 200
+    }));
+  }, [historical]);
+
   // Setup WebSocket connection to Real-time Express Engine
   useEffect(() => {
     const socket = io(WS_URL);
     socket.on("marketUpdate", (data: any) => {
-      if (data.symbol === "NIFTY 50") {
-        setNiftyRealtime({ price: data.price, change: data.change });
+      // Find NIFTY 50
+      const nifty = data.find((d: any) => d.symbol === "^NSEI" || d.name === "NIFTY 50");
+      if (nifty) {
+        setNiftyRealtime({ price: nifty.price, change: nifty.change });
       }
     });
     return () => { socket.disconnect(); };
@@ -84,18 +100,12 @@ export default function DashboardPage() {
                 <span>₹{Math.abs(niftyChange).toFixed(2)} ({(niftyChange / niftyPrice * 100).toFixed(2)}%) Today</span>
               </div>
             </div>
-            <div className="h-24 md:h-28 w-full md:w-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2.5} fill="url(#heroGrad)" />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="h-32 md:h-40 w-full md:w-[28rem] rounded-xl overflow-hidden border border-white/5 bg-black/20">
+              <TradingViewChart 
+                data={chartData} 
+                type="area" 
+                colors={{ lineColor: isUp ? "#10b981" : "#ef4444", areaTopColor: isUp ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)" }} 
+              />
             </div>
           </div>
         </motion.section>

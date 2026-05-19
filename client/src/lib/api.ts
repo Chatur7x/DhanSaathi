@@ -15,3 +15,8 @@ export const getTopMovers = async () => {
   const res = await axios.get(`${API_URL}/api/market/movers`);
   return res.data;
 };
+
+export const getHistoricalData = async (symbol: string, period: string = '1M') => {
+  const res = await axios.get(`${API_URL}/api/market/historical`, { params: { symbol, period } });
+  return res.data;
+};
