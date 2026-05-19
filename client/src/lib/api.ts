@@ -30,3 +30,13 @@ export const getQuotes = async (symbols: string[]) => {
   const res = await axios.get(`${API_URL}/api/market/quotes`, { params: { symbols: symbols.join(',') } });
   return res.data;
 };
+
+export const getCrypto = async (symbols: string = 'BTC,ETH,SOL,XRP') => {
+  const res = await axios.get(`${API_URL}/api/market/crypto`, { params: { symbols } });
+  return res.data;
+};
+
+export const getForex = async (symbols: string = 'INR,EUR,GBP,JPY') => {
+  const res = await axios.get(`${API_URL}/api/market/forex`, { params: { symbols } });
+  return res.data;
+};

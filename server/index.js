@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -101,10 +102,32 @@ app.get('/api/market/movers', async (req, res) => {
   }
 });
 
+const externalApi = require('./services/externalApi');
+
 app.get('/api/market/option-chain', async (req, res) => {
   try {
     const { symbol } = req.query;
     const data = await marketApi.getOptionChain(symbol);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/market/crypto', async (req, res) => {
+  try {
+    const symbols = req.query.symbols || 'BTC,ETH,SOL,XRP';
+    const data = await externalApi.getCryptoPrices(symbols);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/market/forex', async (req, res) => {
+  try {
+    const symbols = req.query.symbols || 'INR,EUR,GBP,JPY';
+    const data = await externalApi.getForexRates(symbols);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -9,7 +9,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
-import { getQuotes, getTopMovers } from "@/lib/api";
+import { getQuotes, getTopMovers, getCrypto, getForex } from "@/lib/api";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 20, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring" as const, stiffness: 300, damping: 25 } } };
@@ -24,9 +24,15 @@ export default function MarketsPage() {
   });
 
   const { data: crypto } = useQuery({
-    queryKey: ["crypto"],
-    queryFn: () => getQuotes(["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD"]),
+    queryKey: ["cryptoRates"],
+    queryFn: () => getCrypto(),
     refetchInterval: 15000,
+  });
+
+  const { data: forex } = useQuery({
+    queryKey: ["forexRates"],
+    queryFn: () => getForex(),
+    refetchInterval: 60000, // Forex updates slower on free tier
   });
 
   const { data: movers } = useQuery({
@@ -67,11 +73,11 @@ export default function MarketsPage() {
           ))}
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Crypto */}
           <motion.div variants={item}>
             <GlowCard glowColor="#f59e0b">
-              <h3 className="font-bold text-white mb-4 flex items-center gap-2">Crypto Markets</h3>
+              <h3 className="font-bold text-white mb-4 flex items-center gap-2">Crypto (Coinlayer)</h3>
               <div className="space-y-0.5">
                 {(crypto || []).map((s: any, i: number) => (
                   <motion.div key={s.symbol} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
@@ -79,9 +85,31 @@ export default function MarketsPage() {
                     className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors">
                     <p className="text-sm font-bold text-white">{s.symbol.replace('-USD', '')}</p>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-white">${s.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
-                      <p className={`text-xs font-bold ${s.change >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                        {s.change >= 0 ? "+" : ""}{s.changePercent}%
+                      <p className="text-sm font-semibold text-white">${Number(s.price).toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+                      <p className={`text-xs font-bold ${s.changePercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {s.changePercent >= 0 ? "+" : ""}{s.changePercent}%
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </GlowCard>
+          </motion.div>
+
+          {/* Forex */}
+          <motion.div variants={item}>
+            <GlowCard glowColor="#06b6d4">
+              <h3 className="font-bold text-white mb-4 flex items-center gap-2">Forex (Fixer)</h3>
+              <div className="space-y-0.5">
+                {(forex || []).map((s: any, i: number) => (
+                  <motion.div key={s.symbol} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05, type: "spring" as const, stiffness: 300, damping: 25 }}
+                    className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors">
+                    <p className="text-sm font-bold text-white">{s.symbol}</p>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-white">${Number(s.price).toLocaleString("en-US", { minimumFractionDigits: 4 })}</p>
+                      <p className={`text-xs font-bold ${s.changePercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {s.changePercent >= 0 ? "+" : ""}{s.changePercent}%
                       </p>
                     </div>
                   </motion.div>
