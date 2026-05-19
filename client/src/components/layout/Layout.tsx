@@ -5,13 +5,17 @@ import Header from './Header';
 import AIChatbot from '../ai/AIChatbot';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { usePortfolioStore } from '../../store/portfolioStore';
 import './Layout.scss';
 
 export default function Layout() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const location = useLocation();
+  const fetchHoldings = usePortfolioStore(state => state.fetchHoldings);
 
   useEffect(() => {
+    fetchHoldings(); // Fetch real portfolio from backend on load
+
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);

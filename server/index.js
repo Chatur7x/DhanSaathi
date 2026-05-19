@@ -3,12 +3,17 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
+const axios = require('axios');
 const marketApi = require('./services/marketApi');
+const { NseIndia } = require('stock-nse-india');
+
+const nseIndia = new NseIndia();
 
 // Route imports
 const aiRoutes = require('./routes/ai');
 const authRoutes = require('./routes/auth');
 const paperTradingRoutes = require('./routes/paperTrading');
+const portfolioRoutes = require('./routes/portfolio');
 
 const app = express();
 
@@ -49,6 +54,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/ai', aiRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/paper-trading', paperTradingRoutes);
+app.use('/api/portfolio', portfolioRoutes);
 
 // ============================================
 // Market Data Routes (inline)
@@ -102,40 +108,65 @@ const io = new Server(server, {
   }
 });
 
-// Mock data for demo
-const mockData = [
-  { symbol: '^NSEI', name: 'NIFTY 50', price: 22450.25, change: 125.45, changePercent: 0.56 },
-  { symbol: '^BSESN', name: 'SENSEX', price: 73800.75, change: 320.20, changePercent: 0.43 },
-  { symbol: '^NSEBANK', name: 'BANK NIFTY', price: 48200.50, change: -85.30, changePercent: -0.18 },
-  { symbol: '^INDIAVIX', name: 'INDIA VIX', price: 12.50, change: -0.30, changePercent: -2.34 },
-  { symbol: '^CNXAUTO', name: 'NIFTY AUTO', price: 0, change: 0, changePercent: 1.2 },
-  { symbol: '^CNXFMCG', name: 'NIFTY FMCG', price: 0, change: 0, changePercent: 0.8 },
-  { symbol: '^CNXMETAL', name: 'NIFTY METAL', price: 0, change: 0, changePercent: -0.5 },
-  { symbol: '^CNXPHARMA', name: 'NIFTY PHARMA', price: 0, change: 0, changePercent: 1.5 },
-  { symbol: '^CNXIT', name: 'NIFTY IT', price: 0, change: 0, changePercent: 2.1 },
-  { symbol: 'RELIANCE.NS', name: 'Reliance Industries', price: 2450.35, change: 25.10, changePercent: 1.03 },
-  { symbol: 'TCS.NS', name: 'Tata Consultancy', price: 4100.80, change: -15.25, changePercent: -0.36 },
-  { symbol: 'HDFCBANK.NS', name: 'HDFC Bank', price: 1680.45, change: 12.15, changePercent: 0.72 },
-  { symbol: 'INFY.NS', name: 'Infosys', price: 1520.60, change: 18.30, changePercent: 1.20 },
-  { symbol: 'ITC.NS', name: 'ITC Ltd', price: 445.75, change: -3.20, changePercent: -0.67 },
-  { symbol: 'SBIN.NS', name: 'State Bank of India', price: 585.90, change: 8.45, changePercent: 1.39 },
-];
+// Emit Real Market Data every 15 seconds to avoid IP block
+setInterval(async () => {
+  try {
+    const indicesData = await nseIndia.getEquityStockIndices('NIFTY 50');
+    // Map NSE real data to the expected format
+    if (indicesData && indicesData.data) {
+      const realData = indicesData.data.slice(0, 15).map(item => ({
+        symbol: item.symbol,
+        name: item.symbol, // or map to full name if needed
+        price: item.lastPrice,
+        change: item.change,
+        changePercent: item.pChange
+      }));
+      
+      // Add custom Nifty entry to match frontend
+      realData.unshift({
+        symbol: '^NSEI',
+        name: 'NIFTY 50',
+        price: indicesData.metadata?.last || 0,
+        change: indicesData.metadata?.change || 0,
+        changePercent: indicesData.metadata?.percChange || 0
+      });
 
-// Emit mock data every 10 seconds
-setInterval(() => {
-  const variedData = mockData.map(item => ({
-    ...item,
-    price: item.price > 0 ? parseFloat((item.price + (Math.random() - 0.5) * 10).toFixed(2)) : 0,
-    change: parseFloat(((Math.random() - 0.5) * 50).toFixed(2)),
-    changePercent: parseFloat(((Math.random() - 0.5) * 2).toFixed(2))
-  }));
-  io.emit('marketUpdate', variedData);
-}, 10000);
+      io.emit('marketUpdate', realData);
+    }
+  } catch (error) {
+    console.error('Failed to fetch real market data:', error.message);
+  }
+}, 15000);
+
+// Emit Real AI News periodically
+let lastNewsId = null;
+setInterval(async () => {
+  try {
+    const rssUrl = encodeURIComponent('https://economictimes.indiatimes.com/markets/rssfeeds/2146842.cms');
+    const res = await axios.get(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
+    
+    if (res.data && res.data.items && res.data.items.length > 0) {
+      const latestItem = res.data.items[Math.floor(Math.random() * 5)]; // pick one of top 5 randomly to simulate flow
+      
+      // Simple mock sentiment analysis fallback (In production, use Gemini here)
+      const sentiment = latestItem.title.toLowerCase().includes('fall') || latestItem.title.toLowerCase().includes('loss') ? 'Bearish' : 'Bullish';
+      
+      io.emit('aiNewsUpdate', {
+        id: latestItem.guid || Date.now(),
+        headline: latestItem.title,
+        sentiment: sentiment,
+        impact: Math.floor(Math.random() * 100) + '%',
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    console.error('Failed to fetch live AI news:', error.message);
+  }
+}, 10000); // Emits real scraped news every 10 seconds
 
 // Socket.io
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  socket.emit('marketUpdate', mockData);
   socket.on('disconnect', () => console.log('Client disconnected:', socket.id));
 });
 

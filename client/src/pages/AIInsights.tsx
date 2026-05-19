@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchLiveNews } from '../services/api';
+import { fetchLiveNews, socket } from '../services/api';
 import { motion } from 'framer-motion';
 import { Newspaper, TrendingUp, TrendingDown, ExternalLink, RefreshCw } from 'lucide-react';
 
@@ -16,8 +16,29 @@ export default function AIInsights() {
 
   useEffect(() => {
     loadNews();
+    
+    // Listen to real-time AI News Socket
+    socket.on('aiNewsUpdate', (newNewsItem) => {
+      setNews((prev) => {
+        // Only keep the latest 50 items so we don't blow up memory
+        const formatted = {
+          id: newNewsItem.id,
+          headline: newNewsItem.headline,
+          summary: 'AI Real-time analysis triggered.',
+          source: 'DhanSaathi AI',
+          time: new Date(newNewsItem.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          link: '#',
+          impact: newNewsItem.sentiment === 'Bullish' ? 'positive' : 'negative'
+        };
+        return [formatted, ...prev].slice(0, 50);
+      });
+    });
+
     const interval = setInterval(loadNews, 300000); // Refresh every 5 min
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      socket.off('aiNewsUpdate');
+    };
   }, []);
 
   return (
