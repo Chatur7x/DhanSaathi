@@ -1,6 +1,6 @@
 "use client";
 
-import { createChart, ColorType, IChartApi, ISeriesApi } from "lightweight-charts";
+import { createChart, ColorType, IChartApi, ISeriesApi, AreaSeries, CandlestickSeries } from "lightweight-charts";
 import React, { useEffect, useRef } from "react";
 
 interface TradingViewChartProps {
@@ -70,7 +70,7 @@ export function TradingViewChart({
     chartRef.current = chart;
 
     if (type === "area") {
-      const series = chart.addAreaSeries({
+      const series = chart.addSeries(AreaSeries, {
         lineColor,
         topColor: areaTopColor,
         bottomColor: areaBottomColor,
@@ -79,7 +79,7 @@ export function TradingViewChart({
       series.setData(data as any);
       seriesRef.current = series as any;
     } else {
-      const series = chart.addCandlestickSeries({
+      const series = chart.addSeries(CandlestickSeries, {
         upColor: '#10b981',
         downColor: '#ef4444',
         borderVisible: false,
