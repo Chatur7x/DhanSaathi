@@ -25,11 +25,54 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+const marketApi = require('../services/marketApi');
+
 // Get user's portfolio
 router.get('/', authMiddleware, (req, res) => {
   try {
     const portfolios = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').all(req.userId);
     res.json(portfolios);
+  } catch (error) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Get portfolio summary
+router.get('/summary', authMiddleware, async (req, res) => {
+  try {
+    const portfolios = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').all(req.userId);
+    
+    if (portfolios.length === 0) {
+      return res.json({ totalValue: 0, totalInvested: 0, todaysPnl: 0, overallPnl: 0, overallPnlPercentage: 0 });
+    }
+
+    const symbols = portfolios.map(p => p.symbol);
+    const quotes = await marketApi.getQuotes(symbols);
+    
+    let totalValue = 0;
+    let totalInvested = 0;
+    let todaysPnl = 0;
+
+    portfolios.forEach(p => {
+      const quote = quotes.find(q => q.symbol === p.symbol);
+      const currentPrice = quote ? quote.price : p.buy_price;
+      const change = quote ? quote.change : 0;
+      
+      totalInvested += (p.buy_price * p.quantity);
+      totalValue += (currentPrice * p.quantity);
+      todaysPnl += (change * p.quantity);
+    });
+
+    const overallPnl = totalValue - totalInvested;
+    const overallPnlPercentage = totalInvested > 0 ? (overallPnl / totalInvested) * 100 : 0;
+
+    res.json({
+      totalValue,
+      totalInvested,
+      todaysPnl,
+      overallPnl,
+      overallPnlPercentage: parseFloat(overallPnlPercentage.toFixed(2))
+    });
   } catch (error) {
     res.status(500).json({ error: 'Database error' });
   }

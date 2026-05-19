@@ -79,6 +79,28 @@ app.get('/api/market/historical', async (req, res) => {
   }
 });
 
+app.get('/api/market/indices', async (req, res) => {
+  try {
+    const indices = ['^NSEI', '^BSESN', '^NSEBANK', '^CNXIT'];
+    const quotes = await marketApi.getQuotes(indices);
+    res.json(quotes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/market/movers', async (req, res) => {
+  try {
+    const symbols = ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'ITC.NS', 'TATAMOTORS.NS', 'SBIN.NS'];
+    const quotes = await marketApi.getQuotes(symbols);
+    // Sort by absolute change percentage
+    quotes.sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
+    res.json(quotes.slice(0, 6));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/market/option-chain', async (req, res) => {
   try {
     const { symbol } = req.query;
