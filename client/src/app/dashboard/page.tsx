@@ -43,9 +43,9 @@ export default function DashboardPage() {
   const chartData = useMemo(() => {
     if (historical && Array.isArray(historical) && historical.length > 0) {
       return historical.map((h: any) => ({
-        time: Math.floor(new Date(h.date).getTime() / 1000),
-        value: h.close || h.price,
-      }));
+        time: h.time ? h.time : Math.floor(new Date(h.date).getTime() / 1000),
+        value: h.close || h.price || h.value,
+      })).sort((a: any, b: any) => a.time - b.time);
     }
     // Fallback static data if Yahoo Finance doesn't return anything
     const now = Math.floor(Date.now() / 1000);
