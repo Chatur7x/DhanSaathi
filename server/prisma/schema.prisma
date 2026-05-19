@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Enterprise Upgrade: Switch provider to "postgresql" when ready for production
+datasource db {
+  provider = "sqlite" // Change this to "postgresql" in production
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  holdings  Holding[]
+  trades    TradeHistory[]
+}
+
+model Holding {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  symbol       String
+  quantity     Float
+  averagePrice Float
+  assetType    String   @default("EQUITY")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, symbol])
+}
+
+model TradeHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  symbol    String
+  type      TradeType
+  quantity  Float
+  price     Float
+  timestamp DateTime @default(now())
+}
+
+enum TradeType {
+  BUY
+  SELL
+}
