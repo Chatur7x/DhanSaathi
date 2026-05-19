@@ -1,0 +1,201 @@
+"use client";
+
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowUpRight, ArrowDownRight, Activity, Brain, TrendingUp, Wallet, Zap, BarChart3 } from "lucide-react";
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import { GlowCard } from "@/components/premium/glow-card";
+import { AnimatedCounter, LivePulse } from "@/components/premium/animated-counter";
+import { AppShell } from "@/components/layout/app-shell";
+import { useEffect, useState } from "react";
+
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.07 } } };
+const item = { hidden: { opacity: 0, y: 20, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring" as const, stiffness: 300, damping: 25 } } };
+
+// Simulated market data
+const generateChart = () => Array.from({ length: 30 }, (_, i) => ({
+  time: i, value: 22000 + Math.sin(i * 0.3) * 400 + Math.random() * 200
+}));
+
+const stockQuotes = [
+  { symbol: "RELIANCE", name: "Reliance Industries", price: 2847.50, change: 1.24 },
+  { symbol: "TCS", name: "Tata Consultancy", price: 3542.80, change: -0.67 },
+  { symbol: "HDFCBANK", name: "HDFC Bank Ltd", price: 1623.15, change: 0.89 },
+  { symbol: "INFY", name: "Infosys Limited", price: 1456.30, change: 2.15 },
+  { symbol: "ITC", name: "ITC Limited", price: 442.60, change: -0.32 },
+];
+
+const aiNews = [
+  { id: 1, headline: "RBI holds repo rate at 6.5%, signals continued support for growth", sentiment: "Bullish", time: "2m ago" },
+  { id: 2, headline: "FII outflows reach ₹8,400 Cr in May — largest monthly exit in 6 months", sentiment: "Bearish", time: "12m ago" },
+  { id: 3, headline: "Nifty IT index surges 3.2% as US tech spending outlook improves", sentiment: "Bullish", time: "28m ago" },
+  { id: 4, headline: "Auto sector under pressure as chip shortage extends to Q3", sentiment: "Bearish", time: "1h ago" },
+];
+
+export default function DashboardPage() {
+  const [niftyPrice, setNiftyPrice] = useState(22456.80);
+  const [niftyChange] = useState(187.45);
+  const [chartData] = useState(generateChart);
+
+  // Simulate live price updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNiftyPrice(prev => prev + (Math.random() - 0.48) * 15);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const isUp = niftyChange > 0;
+
+  return (
+    <AppShell>
+      <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+        {/* Hero */}
+        <motion.section variants={item} className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/30 p-6 md:p-8">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
+          <div className="relative z-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <h2 className="text-sm font-semibold text-slate-400 tracking-wide uppercase">NIFTY 50</h2>
+                <LivePulse />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white">
+                ₹<AnimatedCounter value={niftyPrice} decimals={2} />
+              </h1>
+              <div className={`flex items-center gap-1.5 text-sm font-semibold ${isUp ? "text-emerald-400" : "text-red-400"}`}>
+                {isUp ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                <span>₹{Math.abs(niftyChange).toFixed(2)} ({(niftyChange / niftyPrice * 100).toFixed(2)}%) Today</span>
+              </div>
+            </div>
+            <div className="h-24 md:h-28 w-full md:w-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2.5} fill="url(#heroGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Stats Grid */}
+        <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Portfolio Value", value: "₹12,45,820", icon: Wallet, color: "text-indigo-400", bg: "bg-indigo-500/10" },
+            { label: "Day P&L", value: "+₹8,420", icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+            { label: "Total Returns", value: "+18.4%", icon: BarChart3, color: "text-cyan-400", bg: "bg-cyan-500/10" },
+            { label: "AI Score", value: "87/100", icon: Zap, color: "text-amber-400", bg: "bg-amber-500/10" },
+          ].map((s, i) => (
+            <GlowCard key={i} glowColor={s.color.includes("indigo") ? "#6366f1" : s.color.includes("emerald") ? "#10b981" : s.color.includes("cyan") ? "#06b6d4" : "#f59e0b"}>
+              <div className={`inline-flex p-2 rounded-lg ${s.bg} mb-3`}>
+                <s.icon size={18} className={s.color} />
+              </div>
+              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">{s.label}</p>
+              <p className="text-xl font-bold text-white mt-0.5">{s.value}</p>
+            </GlowCard>
+          ))}
+        </motion.div>
+
+        {/* AI News Ticker */}
+        <motion.div
+          variants={item}
+          className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-purple-500/20 bg-purple-500/5"
+        >
+          <div className="flex items-center gap-2 shrink-0">
+            <Brain size={16} className="text-purple-400" />
+            <span className="text-[0.65rem] font-bold text-purple-400 tracking-widest">AI INSIGHT</span>
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={aiNews[0].id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex items-center gap-3 min-w-0 flex-1"
+            >
+              <span className="text-sm text-slate-300 truncate">{aiNews[0].headline}</span>
+              <span className={`shrink-0 text-[0.65rem] font-bold px-2 py-0.5 rounded-full ${
+                aiNews[0].sentiment === "Bullish" ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-red-500/15 text-red-400 border border-red-500/30"
+              }`}>
+                {aiNews[0].sentiment}
+              </span>
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Two Column */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Market Watch */}
+          <motion.div variants={item}>
+            <GlowCard glowColor="#6366f1">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-base font-bold text-white">Market Watch</h3>
+                <LivePulse />
+              </div>
+              <div className="space-y-1">
+                {stockQuotes.map((stock, i) => (
+                  <motion.div
+                    key={stock.symbol}
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.06, type: "spring" as const, stiffness: 300, damping: 25 }}
+                    className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                  >
+                    <div>
+                      <p className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">{stock.symbol}</p>
+                      <p className="text-xs text-slate-500">{stock.name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-white">₹{stock.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
+                      <p className={`text-xs font-semibold ${stock.change > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {stock.change > 0 ? "+" : ""}{stock.change}%
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </GlowCard>
+          </motion.div>
+
+          {/* AI News */}
+          <motion.div variants={item}>
+            <GlowCard glowColor="#a855f7" className="bg-gradient-to-br from-slate-900 to-purple-950/20">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-white">AI News Feed</h3>
+                  <Brain size={16} className="text-purple-400" />
+                </div>
+                <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30">REAL-TIME</span>
+              </div>
+              <div className="space-y-3">
+                {aiNews.map((news, i) => (
+                  <motion.div
+                    key={news.id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08, type: "spring" as const, stiffness: 300, damping: 25 }}
+                    className="p-3 rounded-xl bg-white/[0.02] border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer"
+                  >
+                    <p className="text-sm font-semibold text-slate-200 mb-1.5">{news.headline}</p>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-slate-500">{news.time}</span>
+                      <span className={`font-bold px-2 py-0.5 rounded-full ${
+                        news.sentiment === "Bullish" ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
+                      }`}>
+                        {news.sentiment}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </GlowCard>
+          </motion.div>
+        </div>
+      </motion.div>
+    </AppShell>
+  );
+}
