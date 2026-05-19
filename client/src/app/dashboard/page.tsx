@@ -7,44 +7,62 @@ import { GlowCard } from "@/components/premium/glow-card";
 import { AnimatedCounter, LivePulse } from "@/components/premium/animated-counter";
 import { AppShell } from "@/components/layout/app-shell";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getPortfolioSummary, getMarketIndices } from "@/lib/api";
+import { io } from "socket.io-client";
+import { WS_URL } from "@/lib/api-config";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.07 } } };
 const item = { hidden: { opacity: 0, y: 20, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring" as const, stiffness: 300, damping: 25 } } };
 
-// Simulated market data
+// Simulated chart data for now, real sparklines would come from backend
 const generateChart = () => Array.from({ length: 30 }, (_, i) => ({
   time: i, value: 22000 + Math.sin(i * 0.3) * 400 + Math.random() * 200
 }));
 
-const stockQuotes = [
-  { symbol: "RELIANCE", name: "Reliance Industries", price: 2847.50, change: 1.24 },
-  { symbol: "TCS", name: "Tata Consultancy", price: 3542.80, change: -0.67 },
-  { symbol: "HDFCBANK", name: "HDFC Bank Ltd", price: 1623.15, change: 0.89 },
-  { symbol: "INFY", name: "Infosys Limited", price: 1456.30, change: 2.15 },
-  { symbol: "ITC", name: "ITC Limited", price: 442.60, change: -0.32 },
-];
-
-const aiNews = [
-  { id: 1, headline: "RBI holds repo rate at 6.5%, signals continued support for growth", sentiment: "Bullish", time: "2m ago" },
-  { id: 2, headline: "FII outflows reach ₹8,400 Cr in May — largest monthly exit in 6 months", sentiment: "Bearish", time: "12m ago" },
-  { id: 3, headline: "Nifty IT index surges 3.2% as US tech spending outlook improves", sentiment: "Bullish", time: "28m ago" },
-  { id: 4, headline: "Auto sector under pressure as chip shortage extends to Q3", sentiment: "Bearish", time: "1h ago" },
-];
-
 export default function DashboardPage() {
-  const [niftyPrice, setNiftyPrice] = useState(22456.80);
-  const [niftyChange] = useState(187.45);
   const [chartData] = useState(generateChart);
+  const [niftyRealtime, setNiftyRealtime] = useState<{ price: number, change: number } | null>(null);
 
-  // Simulate live price updates
+  const { data: portfolio } = useQuery({
+    queryKey: ["portfolioSummary"],
+    queryFn: getPortfolioSummary,
+    initialData: { totalValue: 1245820, totalInvested: 1000000, todaysPnl: 8420, overallPnl: 245820, overallPnlPercentage: 24.58 }
+  });
+
+  const { data: indices } = useQuery({
+    queryKey: ["marketIndices"],
+    queryFn: getMarketIndices,
+    initialData: [
+      { symbol: "RELIANCE", name: "Reliance Industries", price: 2847.50, change: 1.24 },
+      { symbol: "TCS", name: "Tata Consultancy", price: 3542.80, change: -0.67 },
+      { symbol: "HDFCBANK", name: "HDFC Bank Ltd", price: 1623.15, change: 0.89 },
+      { symbol: "INFY", name: "Infosys Limited", price: 1456.30, change: 2.15 },
+    ]
+  });
+
+  // Setup WebSocket connection to Real-time Express Engine
   useEffect(() => {
-    const interval = setInterval(() => {
-      setNiftyPrice(prev => prev + (Math.random() - 0.48) * 15);
-    }, 3000);
-    return () => clearInterval(interval);
+    const socket = io(WS_URL);
+    socket.on("marketUpdate", (data: any) => {
+      if (data.symbol === "NIFTY 50") {
+        setNiftyRealtime({ price: data.price, change: data.change });
+      }
+    });
+    return () => { socket.disconnect(); };
   }, []);
 
-  const isUp = niftyChange > 0;
+  const niftyPrice = niftyRealtime?.price || 22456.80;
+  const niftyChange = niftyRealtime?.change || 187.45;
+  const isUp = niftyChange >= 0;
+
+  // Real AI News from DB would go here, fallback for UI
+  const aiNews = [
+    { id: 1, headline: "RBI holds repo rate at 6.5%, signals continued support for growth", sentiment: "Bullish", time: "2m ago" },
+    { id: 2, headline: "FII outflows reach ₹8,400 Cr in May — largest monthly exit in 6 months", sentiment: "Bearish", time: "12m ago" },
+    { id: 3, headline: "Nifty IT index surges 3.2% as US tech spending outlook improves", sentiment: "Bullish", time: "28m ago" },
+    { id: 4, headline: "Auto sector under pressure as chip shortage extends to Q3", sentiment: "Bearish", time: "1h ago" },
+  ];
 
   return (
     <AppShell>
@@ -85,9 +103,9 @@ export default function DashboardPage() {
         {/* Stats Grid */}
         <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Portfolio Value", value: "₹12,45,820", icon: Wallet, color: "text-indigo-400", bg: "bg-indigo-500/10" },
-            { label: "Day P&L", value: "+₹8,420", icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-            { label: "Total Returns", value: "+18.4%", icon: BarChart3, color: "text-cyan-400", bg: "bg-cyan-500/10" },
+            { label: "Portfolio Value", value: `₹${portfolio.totalValue.toLocaleString("en-IN")}`, icon: Wallet, color: "text-indigo-400", bg: "bg-indigo-500/10" },
+            { label: "Day P&L", value: `+₹${portfolio.todaysPnl.toLocaleString("en-IN")}`, icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+            { label: "Total Returns", value: `+${portfolio.overallPnlPercentage}%`, icon: BarChart3, color: "text-cyan-400", bg: "bg-cyan-500/10" },
             { label: "AI Score", value: "87/100", icon: Zap, color: "text-amber-400", bg: "bg-amber-500/10" },
           ].map((s, i) => (
             <GlowCard key={i} glowColor={s.color.includes("indigo") ? "#6366f1" : s.color.includes("emerald") ? "#10b981" : s.color.includes("cyan") ? "#06b6d4" : "#f59e0b"}>
@@ -137,7 +155,7 @@ export default function DashboardPage() {
                 <LivePulse />
               </div>
               <div className="space-y-1">
-                {stockQuotes.map((stock, i) => (
+                {indices.map((stock: any, i: number) => (
                   <motion.div
                     key={stock.symbol}
                     initial={{ opacity: 0, x: -15 }}
