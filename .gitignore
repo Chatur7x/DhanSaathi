@@ -1,6 +1,8 @@
 node_modules/
 node_modules
 dist
+.next/
+*.log
 .env
 *.db
 **/node_modules/
