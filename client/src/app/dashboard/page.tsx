@@ -6,6 +6,7 @@ import { TradingViewChart } from "@/components/premium/trading-view-chart";
 import { GlowCard } from "@/components/premium/glow-card";
 import { AnimatedCounter, LivePulse } from "@/components/premium/animated-counter";
 import { AppShell } from "@/components/layout/app-shell";
+import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getPortfolioSummary, getMarketIndices, getHistoricalData } from "@/lib/api";
@@ -171,8 +172,10 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, x: -15 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.06, type: "spring" as const, stiffness: 300, damping: 25 }}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors cursor-pointer group"
                   >
+                    <Link href="/live-markets"
+                      className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                    >
                     <div>
                       <p className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">{stock.symbol}</p>
                       <p className="text-xs text-slate-500">{stock.name}</p>
@@ -183,6 +186,7 @@ export default function DashboardPage() {
                         {stock.change > 0 ? "+" : ""}{stock.change}%
                       </p>
                     </div>
+                    </Link>
                   </motion.div>
                 ))}
               </div>
@@ -206,8 +210,10 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.08, type: "spring" as const, stiffness: 300, damping: 25 }}
-                    className="p-3 rounded-xl bg-white/[0.02] border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer"
                   >
+                    <Link href="/ai-insights"
+                      className="block p-3 rounded-xl bg-white/[0.02] border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer"
+                    >
                     <p className="text-sm font-semibold text-slate-200 mb-1.5">{news.headline}</p>
                     <div className="flex items-center gap-3 text-xs">
                       <span className="text-slate-500">{news.time}</span>
@@ -217,6 +223,7 @@ export default function DashboardPage() {
                         {news.sentiment}
                       </span>
                     </div>
+                    </Link>
                   </motion.div>
                 ))}
               </div>

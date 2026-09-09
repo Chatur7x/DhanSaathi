@@ -80,6 +80,7 @@ export default function LiveMarketsPage() {
   const [lastUpdate, setLastUpdate] = useState<string>("");
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [catFilter, setCatFilter] = useState<string>("all");
 
   const handleTick = useCallback((data: { quotes: MarketQuote[]; timestamp: string }) => {
     setQuotes(data.quotes);
@@ -164,6 +165,9 @@ export default function LiveMarketsPage() {
     return acc;
   }, {} as Record<string, MarketQuote[]>);
 
+  const visibleCats = (["indian_index", "us_index", "crypto", "commodity_etf"] as const)
+    .filter((cat) => catFilter === "all" || cat === catFilter);
+
   return (
     <AppShell>
       <div className="space-y-6">
@@ -179,8 +183,20 @@ export default function LiveMarketsPage() {
           <LivePulse label={connected ? "LIVE" : "CONNECTING"} />
         </motion.div>
 
+        {/* Category filter */}
+        <div className="flex gap-1 p-1 rounded-xl bg-card border border-border w-fit">
+          {[["all", "All"], ["indian_index", "Indian"], ["us_index", "US"], ["crypto", "Crypto"], ["commodity_etf", "Commodity"]].map(([key, label]) => (
+            <button key={key} onClick={() => setCatFilter(key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                catFilter === key ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
         {/* Ticker Groups */}
-        {["indian_index", "us_index", "crypto", "commodity_etf"].map(cat => (
+        {visibleCats.map(cat => (
           grouped[cat] && (
             <motion.div key={cat} variants={item} initial="hidden" animate="show">
               <GlowCard glowColor={categoryColors[cat]}>

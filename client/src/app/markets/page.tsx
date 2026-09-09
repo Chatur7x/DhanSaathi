@@ -1,12 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BarChart3, TrendingUp, TrendingDown, Search, Filter, ArrowUpRight } from "lucide-react";
-import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import { BarChart3, TrendingUp, Search } from "lucide-react";
 import { GlowCard } from "@/components/premium/glow-card";
 import { LivePulse } from "@/components/premium/animated-counter";
 import { AppShell } from "@/components/layout/app-shell";
-import { useState } from "react";
+import { PageHeader } from "@/components/layout/page-header";
+import { useState, useMemo } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import { getQuotes, getTopMovers, getCrypto, getForex } from "@/lib/api";
@@ -47,22 +47,35 @@ export default function MarketsPage() {
     ]
   });
 
+  const q = search.trim().toLowerCase();
+  const match = (s: string) => !q || s.toLowerCase().includes(q);
+  const fGlobal = useMemo(() => (globalMarkets || []).filter((x: any) => match(String(x.symbol))), [globalMarkets, q]);
+  const fCrypto = useMemo(() => (crypto || []).filter((x: any) => match(String(x.symbol))), [crypto, q]);
+  const fForex = useMemo(() => (forex || []).filter((x: any) => match(String(x.symbol))), [forex, q]);
+  const fMovers = useMemo(() => (movers || []).filter((x: any) => match(String(x.symbol))), [movers, q]);
+
   return (
     <AppShell>
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-        <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-extrabold text-white flex items-center gap-3">
-              <BarChart3 size={28} className="text-indigo-400" /> Global Markets
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">Real-time Global Indices & Crypto</p>
-          </div>
-          <LivePulse label="REAL-TIME" />
+        <motion.div variants={item}>
+          <PageHeader
+            icon={BarChart3} eyebrow="Overview" title="Global Markets" subtitle="Real-time global indices & crypto"
+            right={
+              <>
+                <LivePulse label="REAL-TIME" />
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Filter symbols…"
+                    className="w-44 bg-card border border-border rounded-xl pl-8 pr-3 py-2 text-[13px] placeholder:text-muted-foreground/60 focus:border-primary/50 focus:w-56 transition-all outline-none" />
+                </div>
+              </>
+            }
+          />
         </motion.div>
 
         {/* Global Indices */}
         <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {(globalMarkets || []).map((idx: any, i: number) => (
+          {(fGlobal).map((idx: any, i: number) => (
             <GlowCard key={i} glowColor={idx.change >= 0 ? "#10b981" : "#ef4444"}>
               <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">{idx.symbol.replace('^', '')}</p>
               <p className="text-lg font-bold text-white mt-1">{idx.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
@@ -79,7 +92,7 @@ export default function MarketsPage() {
             <GlowCard glowColor="#f59e0b">
               <h3 className="font-bold text-white mb-4 flex items-center gap-2">Crypto (Coinlayer)</h3>
               <div className="space-y-0.5">
-                {(crypto || []).map((s: any, i: number) => (
+                {(fCrypto).map((s: any, i: number) => (
                   <motion.div key={s.symbol} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05, type: "spring" as const, stiffness: 300, damping: 25 }}
                     className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors">
@@ -101,7 +114,7 @@ export default function MarketsPage() {
             <GlowCard glowColor="#06b6d4">
               <h3 className="font-bold text-white mb-4 flex items-center gap-2">Forex (Fixer)</h3>
               <div className="space-y-0.5">
-                {(forex || []).map((s: any, i: number) => (
+                {(fForex).map((s: any, i: number) => (
                   <motion.div key={s.symbol} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05, type: "spring" as const, stiffness: 300, damping: 25 }}
                     className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors">
@@ -123,7 +136,7 @@ export default function MarketsPage() {
             <GlowCard glowColor="#6366f1">
               <h3 className="font-bold text-white mb-4 flex items-center gap-2"><TrendingUp size={18} className="text-indigo-400" /> NSE Top Movers</h3>
               <div className="space-y-0.5">
-                {(movers || []).map((s: any, i: number) => (
+                {(fMovers).map((s: any, i: number) => (
                   <motion.div key={s.symbol} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05, type: "spring" as const, stiffness: 300, damping: 25 }}
                     className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors">

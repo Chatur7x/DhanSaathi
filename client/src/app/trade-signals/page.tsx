@@ -1,10 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Target, Shield, Zap, Clock, ArrowUpRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Target, Shield, Clock } from "lucide-react";
 import { GlowCard } from "@/components/premium/glow-card";
 import { LivePulse } from "@/components/premium/animated-counter";
 import { AppShell } from "@/components/layout/app-shell";
+import { PageHeader } from "@/components/layout/page-header";
+import { useState } from "react";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 20, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring" as const, stiffness: 300, damping: 25 } } };
@@ -18,17 +20,33 @@ const signals = [
 ];
 
 export default function TradeSignalsPage() {
+  const [filter, setFilter] = useState<"All" | "BUY" | "SELL">("All");
+  const shown = signals.filter((s) => filter === "All" || s.type === filter);
+
   return (
     <AppShell>
-      <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-        <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-extrabold text-white flex items-center gap-3">
-              <Target size={28} className="text-indigo-400" /> AI Trade Signals
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">AI-powered trade recommendations with risk management</p>
-          </div>
-          <LivePulse label="AI ACTIVE" />
+      <motion.div variants={container} initial="hidden" animate="show" className="space-y-5">
+        <motion.div variants={item}>
+          <PageHeader
+            icon={Target} eyebrow="AI Picks" title="Trade Signals" subtitle="Recommendations with entry, target & stop-loss"
+            right={
+              <>
+                <LivePulse label="AI ACTIVE" />
+                <div className="flex gap-1 p-1 rounded-xl bg-card border border-border">
+                  {(["All", "BUY", "SELL"] as const).map((f) => (
+                    <button key={f} onClick={() => setFilter(f)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        filter === f
+                          ? f === "SELL" ? "bg-red-500/10 text-red-500" : f === "BUY" ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}>
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </>
+            }
+          />
         </motion.div>
 
         <motion.div variants={item} className="flex items-center gap-2 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-xs font-medium">
@@ -36,7 +54,7 @@ export default function TradeSignalsPage() {
         </motion.div>
 
         <div className="space-y-4">
-          {signals.map((sig, i) => (
+          {shown.map((sig) => (
             <motion.div key={sig.symbol + sig.type} variants={item}>
               <GlowCard glowColor={sig.type === "BUY" ? "#10b981" : "#ef4444"} className="p-5">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -70,7 +88,7 @@ export default function TradeSignalsPage() {
                   <div className="flex flex-col items-center gap-1">
                     <div className="relative w-16 h-16">
                       <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
-                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#1e293b" strokeWidth="3" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--input)" strokeWidth="3" />
                         <motion.path
                           d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                           fill="none" stroke={sig.confidence >= 80 ? "#10b981" : sig.confidence >= 60 ? "#f59e0b" : "#ef4444"}
@@ -88,6 +106,11 @@ export default function TradeSignalsPage() {
               </GlowCard>
             </motion.div>
           ))}
+          {shown.length === 0 && (
+            <GlowCard className="text-center py-8">
+              <p className="text-sm text-muted-foreground">No {filter} signals right now.</p>
+            </GlowCard>
+          )}
         </div>
       </motion.div>
     </AppShell>

@@ -1,17 +1,29 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, TrendingUp, TrendingDown, RefreshCw, Radio, ExternalLink, Zap } from "lucide-react";
+import { Brain, TrendingUp, TrendingDown, RefreshCw, Radio, Zap } from "lucide-react";
 import { GlowCard } from "@/components/premium/glow-card";
 import { LivePulse } from "@/components/premium/animated-counter";
 import { MagneticButton } from "@/components/premium/magnetic-button";
 import { AppShell } from "@/components/layout/app-shell";
-import { useState } from "react";
+import { PageHeader } from "@/components/layout/page-header";
+import { useEffect, useState } from "react";
+import { io } from "socket.io-client";
+import { WS_URL } from "@/lib/api-config";
 
-const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
-const item = { hidden: { opacity: 0, y: 20, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring" as const, stiffness: 300, damping: 25 } } };
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
+const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.25 } } };
 
-const news = [
+type NewsItem = {
+  id: number | string;
+  headline: string;
+  sentiment: "Bullish" | "Bearish";
+  impact: number | string;
+  source: string;
+  time: string;
+};
+
+const baseNews: NewsItem[] = [
   { id: 1, headline: "RBI holds repo rate at 6.5%, signals continued support for growth", sentiment: "Bullish", impact: 8.2, source: "ET Markets", time: "2m ago" },
   { id: 2, headline: "FII outflows reach ₹8,400 Cr in May — largest monthly exit in 6 months", sentiment: "Bearish", impact: 7.5, source: "MoneyControl", time: "12m ago" },
   { id: 3, headline: "Nifty IT index surges 3.2% as US tech spending outlook improves", sentiment: "Bullish", impact: 6.8, source: "LiveMint", time: "28m ago" },
@@ -28,46 +40,92 @@ const sectors = [
   { name: "Energy", sentiment: "Bearish" },
 ];
 
+type Filter = "All" | "Bullish" | "Bearish";
+
 export default function AIInsightsPage() {
   const [loading, setLoading] = useState(false);
-  const bullish = news.filter(n => n.sentiment === "Bullish").length;
-  const overall = bullish >= news.length / 2 ? "Bullish" : "Bearish";
+  const [live, setLive] = useState<NewsItem[]>([]);
+  const [filter, setFilter] = useState<Filter>("All");
+  const [expanded, setExpanded] = useState<number | string | null>(null);
+  const [liveOn, setLiveOn] = useState(false);
+
+  // Live AI news pushed by the backend (RSS + sentiment, every ~10s)
+  useEffect(() => {
+    const socket = io(WS_URL, { transports: ["websocket", "polling"] });
+    socket.on("connect", () => setLiveOn(true));
+    socket.on("disconnect", () => setLiveOn(false));
+    socket.on("aiNewsUpdate", (n: { id: number | string; headline: string; sentiment: string; impact: string | number }) => {
+      setLive((prev) => {
+        if (prev.some((x) => x.id === n.id)) return prev;
+        const item: NewsItem = {
+          id: n.id,
+          headline: n.headline,
+          sentiment: n.sentiment === "Bearish" ? "Bearish" : "Bullish",
+          impact: n.impact,
+          source: "Live Wire",
+          time: "just now",
+        };
+        return [item, ...prev].slice(0, 6);
+      });
+    });
+    return () => { socket.disconnect(); };
+  }, []);
+
+  const news = [...live, ...baseNews].filter((n) => filter === "All" || n.sentiment === filter);
+  const bullish = baseNews.filter((n) => n.sentiment === "Bullish").length;
+  const overall = bullish >= baseNews.length / 2 ? "Bullish" : "Bearish";
+
+  const refresh = () => {
+    setLoading(true);
+    setLive([]); // drop the live buffer — fresh wire items stream back in
+    setTimeout(() => setLoading(false), 800);
+  };
 
   return (
     <AppShell>
-      <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-        <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-extrabold text-white flex items-center gap-3">
-              <Brain size={28} className="text-purple-400" /> AI Insights & News
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">Real-time intelligence powered by AI sentiment analysis</p>
-          </div>
-          <div className="flex gap-3 items-center">
-            <LivePulse label={`${news.length} ARTICLES`} />
-            <MagneticButton onClick={() => { setLoading(true); setTimeout(() => setLoading(false), 1000); }}
-              className="bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700">
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
-            </MagneticButton>
-          </div>
+      <motion.div variants={container} initial="hidden" animate="show" className="space-y-5">
+        <motion.div variants={item}>
+          <PageHeader
+            icon={Brain} eyebrow="Intelligence" title="AI Insights & News"
+            subtitle="Sentiment analysis across market wires"
+            right={
+              <>
+                <LivePulse label={liveOn ? "LIVE WIRE" : `${baseNews.length} ARTICLES`} />
+                <div className="flex gap-1 p-1 rounded-xl bg-card border border-border">
+                  {(["All", "Bullish", "Bearish"] as Filter[]).map((f) => (
+                    <button key={f} onClick={() => setFilter(f)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        filter === f ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+                      }`}>
+                      {f}
+                    </button>
+                  ))}
+                </div>
+                <MagneticButton onClick={refresh}
+                  className="bg-card text-muted-foreground border border-border hover:text-foreground !px-4 !py-2">
+                  <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Refresh
+                </MagneticButton>
+              </>
+            }
+          />
         </motion.div>
 
         {/* Sentiment Overview */}
         <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-6 gap-3">
-          <GlowCard glowColor={overall === "Bullish" ? "#10b981" : "#ef4444"} className="col-span-2 md:col-span-2">
-            <p className="text-[0.6rem] text-slate-500 uppercase tracking-widest font-semibold mb-2">Overall Market</p>
+          <GlowCard className="col-span-2 md:col-span-2 !p-5">
+            <p className="eyebrow mb-2">Overall Market</p>
             <div className="flex items-center gap-2">
-              {overall === "Bullish" ? <TrendingUp size={22} className="text-emerald-400" /> : <TrendingDown size={22} className="text-red-400" />}
-              <span className={`text-xl font-black ${overall === "Bullish" ? "text-emerald-400" : "text-red-400"}`}>{overall}</span>
+              {overall === "Bullish" ? <TrendingUp size={22} className="text-emerald-500" /> : <TrendingDown size={22} className="text-red-500" />}
+              <span className={`text-xl font-semibold tracking-tight ${overall === "Bullish" ? "text-emerald-500" : "text-red-500"}`}>{overall}</span>
             </div>
-            <p className="text-[0.65rem] text-slate-600 mt-1">{news.length} articles analyzed</p>
+            <p className="text-xs text-muted-foreground mt-1">{baseNews.length} articles analyzed</p>
           </GlowCard>
-          {sectors.map(s => (
-            <GlowCard key={s.name} glowColor={s.sentiment === "Bullish" ? "#10b981" : "#ef4444"}>
-              <p className="text-[0.6rem] text-slate-500 uppercase tracking-widest font-semibold mb-1.5">{s.name}</p>
+          {sectors.map((s) => (
+            <GlowCard key={s.name} className="!p-4">
+              <p className="eyebrow !text-[0.6rem] mb-1.5">{s.name}</p>
               <div className="flex items-center gap-1.5">
-                {s.sentiment === "Bullish" ? <TrendingUp size={15} className="text-emerald-400" /> : <TrendingDown size={15} className="text-red-400" />}
-                <span className={`text-sm font-bold ${s.sentiment === "Bullish" ? "text-emerald-400" : "text-red-400"}`}>{s.sentiment}</span>
+                {s.sentiment === "Bullish" ? <TrendingUp size={14} className="text-emerald-500" /> : <TrendingDown size={14} className="text-red-500" />}
+                <span className={`text-[13px] font-semibold ${s.sentiment === "Bullish" ? "text-emerald-500" : "text-red-500"}`}>{s.sentiment}</span>
               </div>
             </GlowCard>
           ))}
@@ -75,28 +133,61 @@ export default function AIInsightsPage() {
 
         {/* News Feed */}
         <motion.div variants={item}>
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-bold text-white">Live News Feed</h2>
-            <Radio size={14} className="text-purple-400" />
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-[15px] font-semibold">News Feed</h2>
+            <Radio size={13} className="text-primary" />
+            {live.length > 0 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25">
+                {live.length} LIVE
+              </span>
+            )}
           </div>
-          <div className="space-y-3">
-            {news.map((n, i) => (
-              <motion.div key={n.id}
-                initial={{ opacity: 0, y: 15, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: i * 0.04, type: "spring" as const, stiffness: 300, damping: 25 }} layout>
-                <GlowCard glowColor={n.sentiment === "Bullish" ? "#10b981" : "#ef4444"} className="p-4 cursor-pointer">
-                  <p className="text-sm font-semibold text-slate-200 mb-2">{n.headline}</p>
-                  <div className="flex flex-wrap items-center gap-3 text-xs">
-                    <span className="font-semibold text-slate-500">{n.source}</span>
-                    <span className="text-slate-600">{n.time}</span>
-                    <span className={`font-bold px-2 py-0.5 rounded-full ${n.sentiment === "Bullish" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"}`}>{n.sentiment}</span>
-                    <span className="flex items-center gap-1 text-purple-400 font-semibold px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20">
-                      <Zap size={10} /> {n.impact}
-                    </span>
-                  </div>
-                </GlowCard>
-              </motion.div>
-            ))}
+          <div className="space-y-2.5">
+            <AnimatePresence initial={false}>
+              {news.map((n) => {
+                const isOpen = expanded === n.id;
+                const impactNum = typeof n.impact === "string" ? parseFloat(n.impact) || 0 : n.impact;
+                return (
+                  <motion.div key={n.id} layout
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                    <GlowCard className="!p-4">
+                      <button onClick={() => setExpanded(isOpen ? null : n.id)} className="w-full text-left">
+                        <p className="text-sm font-medium leading-snug mb-2">{n.headline}</p>
+                        <div className="flex flex-wrap items-center gap-2.5 text-xs">
+                          <span className="font-medium text-muted-foreground">{n.source}</span>
+                          <span className="text-muted-foreground/70">{n.time}</span>
+                          <span className={`font-semibold px-2 py-0.5 rounded-full ${n.sentiment === "Bullish" ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>{n.sentiment}</span>
+                          <span className="flex items-center gap-1 text-primary font-semibold px-2 py-0.5 rounded-full bg-primary/10">
+                            <Zap size={10} /> {typeof n.impact === "number" ? n.impact.toFixed(1) : n.impact}
+                          </span>
+                        </div>
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }}>
+                            <div className="pt-3 mt-1">
+                              <div className="flex justify-between text-[11px] text-muted-foreground mb-1.5">
+                                <span>Impact score</span><span className="font-semibold">{typeof n.impact === "number" ? n.impact.toFixed(1) : n.impact} / 10</span>
+                              </div>
+                              <div className="h-1.5 rounded-full bg-accent overflow-hidden">
+                                <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(100, impactNum * 10)}%` }}
+                                  transition={{ duration: 0.5, ease: "easeOut" }}
+                                  className={`h-full rounded-full ${n.sentiment === "Bullish" ? "bg-emerald-500" : "bg-red-500"}`} />
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </GlowCard>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+            {news.length === 0 && (
+              <GlowCard className="text-center py-8">
+                <p className="text-sm text-muted-foreground">No {filter.toLowerCase()} stories right now.</p>
+              </GlowCard>
+            )}
           </div>
         </motion.div>
       </motion.div>

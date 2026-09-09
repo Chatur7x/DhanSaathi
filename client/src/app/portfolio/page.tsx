@@ -7,12 +7,16 @@ import { GlowCard } from "@/components/premium/glow-card";
 import { AnimatedCounter, LivePulse } from "@/components/premium/animated-counter";
 import { MagneticButton } from "@/components/premium/magnetic-button";
 import { AppShell } from "@/components/layout/app-shell";
+import { PageHeader } from "@/components/layout/page-header";
+import { useLocalStorage } from "@/lib/store";
 import { useState } from "react";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.07 } } };
 const item = { hidden: { opacity: 0, y: 20, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring" as const, stiffness: 300, damping: 25 } } };
 
-const holdings = [
+type Holding = { symbol: string; qty: number; buyPrice: number; currentPrice: number; type: string };
+
+const defaultHoldings: Holding[] = [
   { symbol: "RELIANCE", qty: 15, buyPrice: 2450, currentPrice: 2847.50, type: "Equity" },
   { symbol: "TCS", qty: 8, buyPrice: 3200, currentPrice: 3542.80, type: "Equity" },
   { symbol: "HDFCBANK", qty: 20, buyPrice: 1520, currentPrice: 1623.15, type: "Equity" },
@@ -23,9 +27,11 @@ const holdings = [
 const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4"];
 
 export default function PortfolioPage() {
+  const [holdings, setHoldings] = useLocalStorage<Holding[]>("ds-holdings", defaultHoldings);
   const [activeTab, setActiveTab] = useState<"holdings" | "allocation" | "trade">("holdings");
   const [tradeForm, setTradeForm] = useState({ symbol: "", quantity: "", price: "", type: "BUY" as "BUY" | "SELL" });
   const [showToast, setShowToast] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
 
   const totalInvested = holdings.reduce((s, h) => s + h.qty * h.buyPrice, 0);
   const totalCurrent = holdings.reduce((s, h) => s + h.qty * h.currentPrice, 0);
@@ -40,7 +46,35 @@ export default function PortfolioPage() {
   }, [] as { name: string; value: number }[]);
 
   const handleTrade = () => {
-    if (!tradeForm.symbol || !tradeForm.quantity || !tradeForm.price) return;
+    const sym = tradeForm.symbol.trim().toUpperCase();
+    const qty = parseFloat(tradeForm.quantity);
+    const price = parseFloat(tradeForm.price);
+    if (!sym || !Number.isFinite(qty) || qty <= 0 || !Number.isFinite(price) || price <= 0) return;
+
+    if (tradeForm.type === "BUY") {
+      setHoldings((hs) => {
+        const ex = hs.find((h) => h.symbol === sym);
+        if (ex) {
+          const totalQty = ex.qty + qty;
+          const avg = (ex.qty * ex.buyPrice + qty * price) / totalQty;
+          return hs.map((h) => (h.symbol === sym ? { ...h, qty: totalQty, buyPrice: Math.round(avg * 100) / 100, currentPrice: price } : h));
+        }
+        return [...hs, { symbol: sym, qty, buyPrice: price, currentPrice: price, type: "Equity" }];
+      });
+      setToastMsg(`Bought ${qty} ${sym} @ ₹${price.toLocaleString("en-IN")}`);
+    } else {
+      const ex = holdings.find((h) => h.symbol === sym);
+      if (!ex || ex.qty < qty) {
+        setToastMsg(`Can't sell ${qty} ${sym} — only ${ex ? ex.qty : 0} held`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        return;
+      }
+      setHoldings((hs) =>
+        hs.map((h) => (h.symbol === sym ? { ...h, qty: h.qty - qty, currentPrice: price } : h)).filter((h) => h.qty > 0)
+      );
+      setToastMsg(`Sold ${qty} ${sym} @ ₹${price.toLocaleString("en-IN")}`);
+    }
     setTradeForm({ symbol: "", quantity: "", price: "", type: "BUY" });
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
@@ -49,9 +83,12 @@ export default function PortfolioPage() {
   return (
     <AppShell>
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-        <motion.div variants={item} className="flex justify-between items-center">
-          <h1 className="text-2xl font-extrabold text-white">Portfolio Tracker</h1>
-          <LivePulse label="SYNCED" />
+        <motion.div variants={item}>
+          <PageHeader
+            icon={Wallet} eyebrow="Holdings" title="Portfolio Tracker"
+            subtitle={`${holdings.length} positions · totals update with every trade`}
+            right={<LivePulse label="SYNCED" />}
+          />
         </motion.div>
 
         {/* Toast */}
@@ -60,7 +97,7 @@ export default function PortfolioPage() {
             <motion.div initial={{ opacity: 0, y: -15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }}
               className="flex items-center gap-2 px-4 py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-semibold text-sm"
             >
-              <ArrowUpRight size={16} /> Trade executed successfully!
+              <ArrowUpRight size={16} /> {toastMsg || "Trade executed successfully!"}
             </motion.div>
           )}
         </AnimatePresence>
