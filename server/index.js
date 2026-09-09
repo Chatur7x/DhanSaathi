@@ -41,8 +41,13 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+const fs = require('fs');
 const clientDist = path.join(__dirname, '../client/dist');
-app.use(express.static(clientDist));
+const clientIndex = path.join(clientDist, 'index.html');
+// Only serve static bundle when it actually exists (Next.js builds to client/.next, not client/dist).
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+}
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -143,9 +148,13 @@ app.get('/api/market/forex', async (req, res) => {
   }
 });
 
-// SPA fallback
+// SPA fallback (only when a static bundle exists; otherwise JSON 404)
 app.use((req, res) => {
-  res.sendFile(path.join(clientDist, 'index.html'));
+  if (fs.existsSync(clientIndex)) {
+    res.sendFile(clientIndex);
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
 });
 
 const server = http.createServer(app);

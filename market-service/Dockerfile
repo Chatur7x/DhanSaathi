@@ -4,12 +4,13 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm ci --only=production
+# Install ALL deps (incl. dev) so `npm run build` (tsc) works, then prune.
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
 
-RUN npm run build
+RUN npm run build && npm prune --omit=dev
 
 EXPOSE 5001
 

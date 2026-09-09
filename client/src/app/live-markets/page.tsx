@@ -7,7 +7,7 @@ import { LivePulse } from "@/components/premium/animated-counter";
 import { AppShell } from "@/components/layout/app-shell";
 import { useEffect, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
-import { WS_URL, API_URL } from "@/lib/api-config";
+import { WS_URL, API_URL, MARKET_URL } from "@/lib/api-config";
 
 interface MarketQuote {
   ticker: string;
@@ -24,6 +24,10 @@ interface MarketQuote {
   open: number;
   prevClose: number;
   timestamp: string;
+  // Day-2 cache metadata (present on market-service quotes)
+  source?: "yahoo" | "cache";
+  stale?: boolean;
+  ageMs?: number;
 }
 
 const item = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.2 } } };
@@ -84,28 +88,76 @@ export default function LiveMarketsPage() {
   }, []);
 
   useEffect(() => {
-    // 1. Fetch immediately via REST so page shows data instantly
-    fetch(`${API_URL}/api/market/tickers`)
-      .then(r => r.json())
-      .then((data: MarketQuote[]) => {
-        if (data.length > 0) {
-          setQuotes(data);
-          setLastUpdate(new Date().toISOString());
+    let cancelled = false;
+    let primary: Socket | null = null;
+    let fallback: Socket | null = null;
+    let fellBack = false;
+
+    const attach = (s: Socket) => {
+      s.on("connect", () => { if (!cancelled) setConnected(true); });
+      s.on("disconnect", () => {
+        if (!cancelled) {
+          setConnected(
+            (primary?.connected || fallback?.connected) ?? false
+          );
+        }
+      });
+      s.on("market:tick", handleTick);
+    };
+
+    // 1. REST: Day-2 market-service (/quotes) first, main API fallback
+    fetch(`${MARKET_URL}/quotes`)
+      .then(r => {
+        if (!r.ok) throw new Error("market-service unavailable");
+        return r.json();
+      })
+      .then((data: { quotes: MarketQuote[]; timestamp: string }) => {
+        if (cancelled) return;
+        if (Array.isArray(data.quotes) && data.quotes.length > 0) {
+          setQuotes(data.quotes);
+          setLastUpdate(data.timestamp || new Date().toISOString());
           setLoading(false);
+        } else {
+          throw new Error("empty market-service snapshot");
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        // Fallback: main backend ticker universe
+        fetch(`${API_URL}/api/market/tickers`)
+          .then(r => r.json())
+          .then((data: MarketQuote[]) => {
+            if (cancelled) return;
+            if (data.length > 0) {
+              setQuotes(data);
+              setLastUpdate(new Date().toISOString());
+              setLoading(false);
+            }
+          })
+          .catch(() => {});
+      });
 
-    // 2. Connect WebSocket for live updates
-    const socket: Socket = io(WS_URL, { transports: ["websocket", "polling"], reconnectionDelay: 1000 });
-    socket.on("connect", () => setConnected(true));
-    socket.on("disconnect", () => setConnected(false));
-    socket.on("market:tick", handleTick);
+    // 2. WebSocket: market-service first, main server fallback (once)
+    primary = io(MARKET_URL, { transports: ["websocket", "polling"], reconnectionDelay: 1000, timeout: 5000 });
+    attach(primary);
+    primary.on("connect_error", () => {
+      if (cancelled || fellBack) return;
+      fellBack = true;
+      primary?.disconnect();
+      primary = null;
+      fallback = io(WS_URL, { transports: ["websocket", "polling"], reconnectionDelay: 1000 });
+      attach(fallback);
+    });
 
-    return () => { socket.disconnect(); };
+    return () => {
+      cancelled = true;
+      primary?.disconnect();
+      fallback?.disconnect();
+    };
   }, [handleTick]);
 
   if (loading) return <Skeleton />;
+
+  const staleCount = quotes.filter(q => q.stale).length;
 
   const grouped = quotes.reduce((acc, q) => {
     (acc[q.category] = acc[q.category] || []).push(q);
@@ -121,7 +173,7 @@ export default function LiveMarketsPage() {
             <Activity size={28} className="text-indigo-400" />
             <div>
               <h1 className="text-2xl font-extrabold text-white">Live Markets</h1>
-              <p className="text-xs text-slate-500">{lastUpdate && `Updated ${new Date(lastUpdate).toLocaleTimeString()} — ${quotes.length} tickers`}</p>
+              <p className="text-xs text-slate-500">{lastUpdate && `Updated ${new Date(lastUpdate).toLocaleTimeString()} — ${quotes.length} tickers${staleCount > 0 ? ` — ${staleCount} cached` : ""}`}</p>
             </div>
           </div>
           <LivePulse label={connected ? "LIVE" : "CONNECTING"} />
@@ -140,7 +192,14 @@ export default function LiveMarketsPage() {
                   {grouped[cat].map((q) => (
                     <div key={q.ticker} className="flex justify-between items-center px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors">
                       <div>
-                        <p className="text-sm font-bold text-white">{q.ticker}</p>
+                        <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                          {q.ticker}
+                          {q.stale && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                              CACHED
+                            </span>
+                          )}
+                        </p>
                         <p className="text-[10px] text-slate-600">{q.displayName}</p>
                       </div>
                       <div className="text-right">

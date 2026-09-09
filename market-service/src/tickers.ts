@@ -35,14 +35,14 @@ export const TICKER_UNIVERSE: TickerConfig[] = [
     enabled: true,
   },
 
-  // US Markets
+  // US Markets — 30s per Day-2 spec
   {
     symbol: "SPX",
     displayName: "S&P 500",
     yahooSymbol: "^GSPC",
     category: "us_index",
     exchange: "NYSE",
-    refreshIntervalMs: 15000,
+    refreshIntervalMs: 30000,
     enabled: true,
   },
   {
@@ -51,7 +51,7 @@ export const TICKER_UNIVERSE: TickerConfig[] = [
     yahooSymbol: "^NDX",
     category: "us_index",
     exchange: "NASDAQ",
-    refreshIntervalMs: 15000,
+    refreshIntervalMs: 30000,
     enabled: true,
   },
   {
@@ -60,18 +60,18 @@ export const TICKER_UNIVERSE: TickerConfig[] = [
     yahooSymbol: "^DJI",
     category: "us_index",
     exchange: "NYSE",
-    refreshIntervalMs: 15000,
+    refreshIntervalMs: 30000,
     enabled: true,
   },
 
-  // Crypto
+  // Crypto — 30s per Day-2 spec
   {
     symbol: "BTC",
     displayName: "Bitcoin",
     yahooSymbol: "BTC-USD",
     category: "crypto",
     exchange: "CRYPTO",
-    refreshIntervalMs: 10000,
+    refreshIntervalMs: 30000,
     enabled: true,
   },
   {
@@ -80,7 +80,7 @@ export const TICKER_UNIVERSE: TickerConfig[] = [
     yahooSymbol: "ETH-USD",
     category: "crypto",
     exchange: "CRYPTO",
-    refreshIntervalMs: 10000,
+    refreshIntervalMs: 30000,
     enabled: true,
   },
   {
@@ -89,18 +89,18 @@ export const TICKER_UNIVERSE: TickerConfig[] = [
     yahooSymbol: "SOL-USD",
     category: "crypto",
     exchange: "CRYPTO",
-    refreshIntervalMs: 10000,
+    refreshIntervalMs: 30000,
     enabled: true,
   },
 
-  // Commodities/ETFs
+  // Commodities/ETFs — 60s per Day-2 spec
   {
     symbol: "GLD",
     displayName: "SPDR Gold Shares",
     yahooSymbol: "GLD",
     category: "commodity_etf",
     exchange: "NYSE",
-    refreshIntervalMs: 30000,
+    refreshIntervalMs: 60000,
     enabled: true,
   },
   {
@@ -109,7 +109,7 @@ export const TICKER_UNIVERSE: TickerConfig[] = [
     yahooSymbol: "USO",
     category: "commodity_etf",
     exchange: "NYSE",
-    refreshIntervalMs: 30000,
+    refreshIntervalMs: 60000,
     enabled: true,
   },
   {
@@ -118,7 +118,7 @@ export const TICKER_UNIVERSE: TickerConfig[] = [
     yahooSymbol: "SLV",
     category: "commodity_etf",
     exchange: "NYSE",
-    refreshIntervalMs: 30000,
+    refreshIntervalMs: 60000,
     enabled: true,
   },
 ];
