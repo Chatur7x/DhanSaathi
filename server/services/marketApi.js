@@ -1,5 +1,6 @@
 const YahooFinance = require('yahoo-finance2').default;
 const yahooFinance = new YahooFinance();
+const { getEnabledTickers, getTickerByYahooSymbol } = require('../tickers');
 
 // Fetch real-time quotes for multiple symbols
 exports.getQuotes = async (symbols) => {
@@ -154,5 +155,39 @@ exports.getOptionChain = async (symbol) => {
   } catch (error) {
     console.error('Option chain error:', error.message);
     return { underlying: symbol, expiryDates: [], strikes: [], calls: [], puts: [] };
+  }
+};
+
+// Fetch quotes for all enabled tickers in the universe
+exports.fetchAllTickerQuotes = async () => {
+  const tickers = getEnabledTickers();
+  const yahooSymbols = tickers.map(t => t.yahooSymbol);
+
+  try {
+    const results = await yahooFinance.quote(yahooSymbols);
+    const quotes = Array.isArray(results) ? results : [results];
+
+    return quotes.map(q => {
+      const config = getTickerByYahooSymbol(q.symbol) || {};
+      return {
+        ticker: config.symbol || q.symbol,
+        symbol: q.symbol,
+        displayName: config.displayName || q.shortName || q.symbol,
+        category: config.category || 'unknown',
+        exchange: config.exchange || q.exchange || '',
+        price: parseFloat((q.regularMarketPrice || 0).toFixed(2)),
+        change: parseFloat((q.regularMarketChange || 0).toFixed(2)),
+        changePercent: parseFloat((q.regularMarketChangePercent || 0).toFixed(2)),
+        volume: q.regularMarketVolume || 0,
+        high: parseFloat((q.regularMarketDayHigh || 0).toFixed(2)),
+        low: parseFloat((q.regularMarketDayLow || 0).toFixed(2)),
+        open: parseFloat((q.regularMarketOpen || 0).toFixed(2)),
+        prevClose: parseFloat((q.regularMarketPreviousClose || 0).toFixed(2)),
+        timestamp: new Date().toISOString(),
+      };
+    });
+  } catch (error) {
+    console.error('Ticker universe fetch error:', error.message);
+    return [];
   }
 };

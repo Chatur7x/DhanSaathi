@@ -102,7 +102,7 @@ export default function SIPCalculatorPage() {
                     <XAxis dataKey="year" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v / 100000).toFixed(0)}L`} />
                     <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", color: "#fff" }}
-                      formatter={(v: number) => [`₹${v.toLocaleString("en-IN")}`, ""]} />
+                      formatter={(v: any) => [`₹${Number(v).toLocaleString("en-IN")}`, ""]} />
                     <Area type="monotone" dataKey="invested" stroke="#6366f1" strokeWidth={2} fill="url(#sipInv)" name="Invested" />
                     <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} fill="url(#sipVal)" name="Value" />
                   </AreaChart>

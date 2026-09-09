@@ -102,6 +102,15 @@ app.get('/api/market/movers', async (req, res) => {
   }
 });
 
+app.get('/api/market/tickers', async (req, res) => {
+  try {
+    const quotes = await marketApi.fetchAllTickerQuotes();
+    res.json(quotes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const externalApi = require('./services/externalApi');
 
 app.get('/api/market/option-chain', async (req, res) => {
@@ -180,6 +189,27 @@ setInterval(async () => {
     }
   } catch (error) {
     console.error('Failed to fetch real market data:', error.message);
+  }
+}, 15000);
+
+// Emit market:tick with Yahoo Finance ticker universe data
+setInterval(async () => {
+  try {
+    const quotes = await marketApi.fetchAllTickerQuotes();
+    if (quotes.length > 0) {
+      io.emit('market:tick', {
+        quotes,
+        timestamp: new Date().toISOString(),
+        count: quotes.length,
+      });
+      // Also emit individual ticker ticks
+      quotes.forEach(q => {
+        io.emit(`market:tick:${q.ticker}`, q);
+      });
+    }
+  } catch (error) {
+    console.error('Failed to fetch ticker universe:', error.message);
+    io.emit('market:error', { error: error.message, timestamp: new Date().toISOString() });
   }
 }, 15000);
 

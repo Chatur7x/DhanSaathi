@@ -146,10 +146,10 @@ export default function PortfolioPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={pieData} cx="50%" cy="50%" outerRadius={100} innerRadius={60} dataKey="value"
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
+                        label={({ name, percent }: any) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}>
                         {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
-                      <Tooltip formatter={(v: number) => `₹${v.toLocaleString("en-IN")}`}
+                      <Tooltip formatter={(v: any) => `₹${Number(v).toLocaleString("en-IN")}`}
                         contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", color: "#fff" }} />
                     </PieChart>
                   </ResponsiveContainer>

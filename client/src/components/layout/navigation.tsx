@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, Briefcase, Brain, BarChart3, Calculator,
-  GraduationCap, Settings, TrendingUp, Bell, ChevronLeft, ChevronRight, Activity
+  GraduationCap, Settings, TrendingUp, Bell, ChevronLeft, ChevronRight, Activity, Radio
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/portfolio", label: "Portfolio", icon: Briefcase },
   { href: "/markets", label: "Markets", icon: BarChart3 },
+  { href: "/live-markets", label: "Live Markets", icon: Radio },
   { href: "/ai-insights", label: "AI Insights", icon: Brain },
   { href: "/trade-signals", label: "Signals", icon: TrendingUp },
   { href: "/options", label: "Options", icon: Activity },
