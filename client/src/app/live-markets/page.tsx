@@ -1,13 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Activity, TrendingUp, TrendingDown, Zap } from "lucide-react";
+import { Activity, Zap } from "lucide-react";
 import { GlowCard } from "@/components/premium/glow-card";
 import { LivePulse } from "@/components/premium/animated-counter";
 import { AppShell } from "@/components/layout/app-shell";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
-import { WS_URL } from "@/lib/api-config";
+import { WS_URL, API_URL } from "@/lib/api-config";
 
 interface MarketQuote {
   ticker: string;
@@ -26,8 +26,7 @@ interface MarketQuote {
   timestamp: string;
 }
 
-const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.04 } } };
-const item = { hidden: { opacity: 0, y: 16, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring" as const, stiffness: 300, damping: 25 } } };
+const item = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.2 } } };
 
 const categoryColors: Record<string, string> = {
   indian_index: "#6366f1",
@@ -49,24 +48,64 @@ function formatPrice(price: number, symbol: string): string {
   return `$${price.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
 }
 
+function Skeleton() {
+  return (
+    <AppShell>
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="h-7 w-7 bg-slate-800 rounded-lg animate-pulse" />
+          <div className="h-7 w-40 bg-slate-800 rounded animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 bg-slate-800/50 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-48 bg-slate-800/50 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
 export default function LiveMarketsPage() {
   const [quotes, setQuotes] = useState<MarketQuote[]>([]);
   const [lastUpdate, setLastUpdate] = useState<string>("");
   const [connected, setConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const handleTick = useCallback((data: { quotes: MarketQuote[]; timestamp: string }) => {
+    setQuotes(data.quotes);
+    setLastUpdate(data.timestamp);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    const socket: Socket = io(WS_URL, { transports: ["websocket", "polling"] });
+    // 1. Fetch immediately via REST so page shows data instantly
+    fetch(`${API_URL}/api/market/tickers`)
+      .then(r => r.json())
+      .then((data: MarketQuote[]) => {
+        if (data.length > 0) {
+          setQuotes(data);
+          setLastUpdate(new Date().toISOString());
+          setLoading(false);
+        }
+      })
+      .catch(() => {});
 
+    // 2. Connect WebSocket for live updates
+    const socket: Socket = io(WS_URL, { transports: ["websocket", "polling"], reconnectionDelay: 1000 });
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
-
-    socket.on("market:tick", (data: { quotes: MarketQuote[]; timestamp: string; count: number }) => {
-      setQuotes(data.quotes);
-      setLastUpdate(data.timestamp);
-    });
+    socket.on("market:tick", handleTick);
 
     return () => { socket.disconnect(); };
-  }, []);
+  }, [handleTick]);
+
+  if (loading) return <Skeleton />;
 
   const grouped = quotes.reduce((acc, q) => {
     (acc[q.category] = acc[q.category] || []).push(q);
@@ -75,45 +114,31 @@ export default function LiveMarketsPage() {
 
   return (
     <AppShell>
-      <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+      <div className="space-y-6">
         {/* Header */}
-        <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-extrabold text-white flex items-center gap-3">
-              <Activity size={28} className="text-indigo-400" /> Live Markets
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">Real-time Yahoo Finance data via WebSocket</p>
-          </div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <LivePulse label={connected ? "LIVE" : "CONNECTING"} />
+            <Activity size={28} className="text-indigo-400" />
+            <div>
+              <h1 className="text-2xl font-extrabold text-white">Live Markets</h1>
+              <p className="text-xs text-slate-500">{lastUpdate && `Updated ${new Date(lastUpdate).toLocaleTimeString()} — ${quotes.length} tickers`}</p>
+            </div>
           </div>
+          <LivePulse label={connected ? "LIVE" : "CONNECTING"} />
         </motion.div>
-
-        {/* Last Update */}
-        {lastUpdate && (
-          <motion.div variants={item} className="text-xs text-slate-600">
-            Last update: {new Date(lastUpdate).toLocaleTimeString()} — {quotes.length} tickers
-          </motion.div>
-        )}
 
         {/* Ticker Groups */}
         {["indian_index", "us_index", "crypto", "commodity_etf"].map(cat => (
           grouped[cat] && (
-            <motion.div key={cat} variants={item}>
+            <motion.div key={cat} variants={item} initial="hidden" animate="show">
               <GlowCard glowColor={categoryColors[cat]}>
-                <div className="flex items-center gap-2 mb-4">
-                  <Zap size={16} style={{ color: categoryColors[cat] }} />
-                  <h3 className="font-bold text-white">{categoryLabels[cat]} Markets</h3>
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap size={14} style={{ color: categoryColors[cat] }} />
+                  <h3 className="font-bold text-white text-sm">{categoryLabels[cat]} Markets</h3>
                 </div>
-                <div className="space-y-1">
-                  {grouped[cat].map((q, i) => (
-                    <motion.div
-                      key={q.ticker}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.03, type: "spring" as const, stiffness: 300, damping: 25 }}
-                      className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors"
-                    >
+                <div className="space-y-0.5">
+                  {grouped[cat].map((q) => (
+                    <div key={q.ticker} className="flex justify-between items-center px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors">
                       <div>
                         <p className="text-sm font-bold text-white">{q.ticker}</p>
                         <p className="text-[10px] text-slate-600">{q.displayName}</p>
@@ -124,7 +149,7 @@ export default function LiveMarketsPage() {
                           {q.change >= 0 ? "+" : ""}{q.change.toFixed(2)} ({q.changePercent.toFixed(2)}%)
                         </p>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </GlowCard>
@@ -132,9 +157,9 @@ export default function LiveMarketsPage() {
           )
         ))}
 
-        {/* Summary Grid */}
+        {/* Index Summary */}
         {quotes.length > 0 && (
-          <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <motion.div variants={item} initial="hidden" animate="show" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {quotes.filter(q => q.category === "indian_index" || q.category === "us_index").map(q => (
               <GlowCard key={q.ticker} glowColor={q.change >= 0 ? "#10b981" : "#ef4444"}>
                 <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">{q.ticker}</p>
@@ -146,7 +171,7 @@ export default function LiveMarketsPage() {
             ))}
           </motion.div>
         )}
-      </motion.div>
+      </div>
     </AppShell>
   );
 }
