@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Market Service — Live Dashboard</title>
+  <script src="https://cdn.socket.io.com/4.7.5/socket.io.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0e1a; color: #f1f5f9; min-height: 100vh; }
+    .header { padding: 24px 32px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .header h1 span { color: #6366f1; }
+    .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #94a3b8; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
+    .dot.live { background: #10b981; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding: 24px 32px; }
+    .card { background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; transition: border-color 0.2s; }
+    .card:hover { border-color: #334155; }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .ticker { font-size: 13px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .category { font-size: 11px; padding: 2px 8px; border-radius: 9999px; font-weight: 600; }
+    .cat-indian_index { background: #6366f120; color: #818cf8; }
+    .cat-us_index { background: #06b6d420; color: #22d3ee; }
+    .cat-crypto { background: #f59e0b20; color: #fbbf24; }
+    .cat-commodity_etf { background: #10b98120; color: #34d399; }
+    .price { font-size: 28px; font-weight: 700; margin: 4px 0; }
+    .change { font-size: 14px; font-weight: 600; }
+    .positive { color: #10b981; }
+    .negative { color: #ef4444; }
+    .meta { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; color: #64748b; }
+    .meta span { display: flex; justify-content: space-between; }
+    .meta .val { color: #94a3b8; font-weight: 500; }
+    .updated { text-align: center; padding: 16px; font-size: 12px; color: #475569; }
+    .log { padding: 16px 32px; max-height: 200px; overflow-y: auto; background: #0f172a; border-top: 1px solid #1e293b; }
+    .log-entry { font-size: 11px; font-family: 'Cascadia Code', 'Fira Code', monospace; color: #64748b; padding: 2px 0; }
+    .log-entry .time { color: #475569; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1><span>Market Service</span> — Live Dashboard</h1>
+    <div class="status">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">Connecting...</span>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="updated" id="updated"></div>
+  <div class="log" id="log"></div>
+
+  <script>
+    const socket = io();
+    const grid = document.getElementById('grid');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const updated = document.getElementById('updated');
+    const logEl = document.getElementById('log');
+
+    const categoryLabels = {
+      indian_index: 'Indian',
+      us_index: 'US',
+      crypto: 'Crypto',
+      commodity_etf: 'Commodity'
+    };
+
+    function addLog(msg) {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = '<span class="time">' + new Date().toLocaleTimeString() + '</span> ' + msg;
+      logEl.prepend(entry);
+      if (logEl.children.length > 50) logEl.lastChild.remove();
+    }
+
+    socket.on('connect', () => {
+      statusDot.classList.add('live');
+      statusText.textContent = 'Connected — ' + socket.id.substring(0, 8);
+      addLog('Connected to market-service');
+    });
+
+    socket.on('disconnect', () => {
+      statusDot.classList.remove('live');
+      statusText.textContent = 'Disconnected';
+      addLog('Disconnected from server');
+    });
+
+    socket.on('market:status', (data) => {
+      addLog('Status: ' + data.status + (data.message ? ' — ' + data.message : ''));
+    });
+
+    socket.on('market:tick', (data) => {
+      updated.textContent = 'Last update: ' + new Date(data.timestamp).toLocaleTimeString() + ' — ' + data.count + ' tickers';
+      addLog('market:tick — ' + data.count + ' quotes received');
+
+      grid.innerHTML = '';
+      data.quotes.forEach(q => {
+        const isPositive = q.change >= 0;
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-header">
+            <span class="ticker">${q.ticker}</span>
+            <span class="category cat-${getCategory(q.symbol)}">${categoryLabels[getCategory(q.symbol)] || ''}</span>
+          </div>
+          <div class="price">${formatPrice(q.price, q.symbol)}</div>
+          <div class="change ${isPositive ? 'positive' : 'negative'}">
+            ${isPositive ? '+' : ''}${q.change.toFixed(2)} (${isPositive ? '+' : ''}${q.changePercent.toFixed(2)}%)
+          </div>
+          <div class="meta">
+            <span>High <span class="val">${formatPrice(q.high, q.symbol)}</span></span>
+            <span>Low <span class="val">${formatPrice(q.low, q.symbol)}</span></span>
+            <span>Open <span class="val">${formatPrice(q.open, q.symbol)}</span></span>
+            <span>Prev <span class="val">${formatPrice(q.prevClose, q.symbol)}</span></span>
+            <span>Vol <span class="val">${q.volume.toLocaleString()}</span></span>
+            <span>Symbol <span class="val">${q.symbol}</span></span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    });
+
+    socket.on('market:error', (data) => {
+      addLog('ERROR: ' + JSON.stringify(data));
+    });
+
+    function getCategory(symbol) {
+      if (symbol.startsWith('^NSE') || symbol.startsWith('^BSE')) return 'indian_index';
+      if (symbol.startsWith('^GSPC') || symbol.startsWith('^NDX') || symbol.startsWith('^DJI')) return 'us_index';
+      if (symbol.endsWith('-USD')) return 'crypto';
+      return 'commodity_etf';
+    }
+
+    function formatPrice(price, symbol) {
+      if (symbol.endsWith('-USD')) return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (symbol.startsWith('^NSE') || symbol.startsWith('^BSE')) return '₹' + price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+  </script>
+</body>
+</html>

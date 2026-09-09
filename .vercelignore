@@ -1,0 +1,12 @@
+node_modules/
+client/node_modules/
+server/node_modules/
+market-service/node_modules/
+client_old/
+market-service/
+server/dhansaathi.db
+server/.env
+client/.next/
+client/dist/
+**/.git/
+**/node_modules/
