@@ -18,6 +18,8 @@ const item = { hidden: { opacity: 0, y: 20, filter: "blur(4px)" }, show: { opaci
 
 export default function DashboardPage() {
   const [niftyRealtime, setNiftyRealtime] = useState<{ price: number, change: number } | null>(null);
+  const [range, setRange] = useState<"1D" | "1W" | "1M" | "1Y">("1M");
+  const periodMap = { "1D": "1D", "1W": "5D", "1M": "1M", "1Y": "1Y" } as const;
 
   const { data: portfolio } = useQuery({
     queryKey: ["portfolioSummary"],
@@ -37,8 +39,8 @@ export default function DashboardPage() {
   });
 
   const { data: historical } = useQuery({
-    queryKey: ["historical", "^NSEI"],
-    queryFn: () => getHistoricalData("^NSEI", "1mo"),
+    queryKey: ["historical", "^NSEI", range],
+    queryFn: () => getHistoricalData("^NSEI", periodMap[range]),
   });
 
   const chartData = useMemo(() => {
@@ -101,12 +103,25 @@ export default function DashboardPage() {
                 <span>₹{Math.abs(niftyChange).toFixed(2)} ({(niftyChange / niftyPrice * 100).toFixed(2)}%) Today</span>
               </div>
             </div>
-            <div className="h-32 md:h-40 w-full md:w-[28rem] rounded-xl overflow-hidden border border-white/5 bg-black/20">
-              <TradingViewChart 
-                data={chartData} 
-                type="area" 
-                colors={{ lineColor: isUp ? "#10b981" : "#ef4444", areaTopColor: isUp ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)" }} 
+            <div className="relative h-32 md:h-40 w-full md:w-[28rem] rounded-xl overflow-hidden border border-white/5 bg-black/20">
+              <TradingViewChart
+                data={chartData}
+                liveValue={niftyRealtime?.price ?? null}
+                up={isUp}
               />
+              <div className="absolute bottom-2 right-2 z-10 flex gap-0.5 p-0.5 rounded-lg bg-black/50 backdrop-blur border border-white/10">
+                {(["1D", "1W", "1M", "1Y"] as const).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRange(r)}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${
+                      range === r ? "bg-primary/20 text-primary" : "text-slate-500 hover:text-slate-300"
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </motion.section>
