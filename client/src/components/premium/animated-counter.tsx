@@ -28,7 +28,7 @@ export function AnimatedCounter({ value, prefix = "", suffix = "", decimals = 2,
 export function LivePulse({ label = "LIVE", connected = true }: { label?: string; connected?: boolean }) {
   return (
     <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.65rem] font-bold tracking-widest border ${
-      connected ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-red-500/30 bg-red-500/10 text-red-400"
+      connected ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
     }`}>
       <motion.div
         animate={{ scale: [1, 1.4, 1], opacity: [1, 0.5, 1] }}

@@ -35,17 +35,17 @@ function Skeleton() {
     <AppShell>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <div className="h-7 w-7 bg-slate-800 rounded-lg animate-pulse" />
-          <div className="h-7 w-40 bg-slate-800 rounded animate-pulse" />
+          <div className="h-7 w-7 bg-muted rounded-lg animate-pulse" />
+          <div className="h-7 w-40 bg-muted rounded animate-pulse" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-slate-800/50 rounded-2xl animate-pulse" />
+            <div key={i} className="h-24 bg-muted/50 rounded-2xl animate-pulse" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-48 bg-slate-800/50 rounded-2xl animate-pulse" />
+            <div key={i} className="h-48 bg-muted/50 rounded-2xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -76,10 +76,10 @@ export default function LiveMarketsPage() {
         {/* Header */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Activity size={28} className="text-indigo-400" />
+            <Activity size={28} className="text-primary" />
             <div>
-              <h1 className="text-2xl font-extrabold text-white">Live Markets</h1>
-              <p className="text-xs text-slate-500">{lastUpdate && `Updated ${new Date(lastUpdate).toLocaleTimeString()} — ${quotes.length} tickers${staleCount > 0 ? ` — ${staleCount} cached` : ""}`}</p>
+              <h1 className="text-2xl font-extrabold text-foreground">Live Markets</h1>
+              <p className="text-xs text-muted-foreground">{lastUpdate && `Updated ${new Date(lastUpdate).toLocaleTimeString()} — ${quotes.length} tickers${staleCount > 0 ? ` — ${staleCount} cached` : ""}`}</p>
             </div>
           </div>
           <LivePulse label={
@@ -109,13 +109,13 @@ export default function LiveMarketsPage() {
               <GlowCard glowColor={categoryColors[cat]}>
                 <div className="flex items-center gap-2 mb-3">
                   <Zap size={14} style={{ color: categoryColors[cat] }} />
-                  <h3 className="font-bold text-white text-sm">{categoryLabels[cat]} Markets</h3>
+                  <h3 className="font-bold text-foreground text-sm">{categoryLabels[cat]} Markets</h3>
                 </div>
                 <div className="space-y-0.5">
                   {grouped[cat].map((q) => (
-                    <div key={q.ticker} className="flex justify-between items-center px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors">
+                    <div key={q.ticker} className="flex justify-between items-center px-3 py-2 rounded-lg hover:bg-accent/60 transition-colors">
                       <div>
-                        <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                        <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
                           {q.ticker}
                           {q.stale && (
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
@@ -123,11 +123,11 @@ export default function LiveMarketsPage() {
                             </span>
                           )}
                         </p>
-                        <p className="text-[10px] text-slate-600">{q.displayName}</p>
+                        <p className="text-[10px] text-muted-foreground/70">{q.displayName}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-white">{formatPrice(q.price, q.symbol)}</p>
-                        <p className={`text-xs font-bold ${q.change >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        <p className="text-sm font-semibold text-foreground">{formatPrice(q.price, q.symbol)}</p>
+                        <p className={`text-xs font-bold ${q.change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                           {q.change >= 0 ? "+" : ""}{q.change.toFixed(2)} ({q.changePercent.toFixed(2)}%)
                         </p>
                       </div>
@@ -144,9 +144,9 @@ export default function LiveMarketsPage() {
           <motion.div variants={item} initial="hidden" animate="show" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {quotes.filter(q => q.category === "indian_index" || q.category === "us_index").map(q => (
               <GlowCard key={q.ticker} glowColor={q.change >= 0 ? "#10b981" : "#ef4444"}>
-                <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">{q.ticker}</p>
-                <p className="text-lg font-bold text-white mt-1">{formatPrice(q.price, q.symbol)}</p>
-                <p className={`text-xs font-semibold mt-0.5 ${q.change >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{q.ticker}</p>
+                <p className="text-lg font-bold text-foreground mt-1">{formatPrice(q.price, q.symbol)}</p>
+                <p className={`text-xs font-semibold mt-0.5 ${q.change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                   {q.change >= 0 ? "+" : ""}{q.change.toFixed(2)} ({q.changePercent.toFixed(2)}%)
                 </p>
               </GlowCard>

@@ -42,6 +42,13 @@ export function TradingViewChart({ data, liveValue = null, up = true }: BeastCha
   const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
   const lastTimeRef = useRef<number>(0);
   const [cursor, setCursor] = useState<{ price: number; time: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Legend depends on locale formatting — render it only on the client
+  // so server and client HTML always match (no hydration mismatch).
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const line = up ? "#7fb069" : "#d96a4b";
 
@@ -162,11 +169,14 @@ export function TradingViewChart({ data, liveValue = null, up = true }: BeastCha
     }
   }, [liveValue]);
 
-  const shown = cursor ?? (data.length > 0 ? { price: liveValue ?? data[data.length - 1].value, time: lastTimeRef.current || data[data.length - 1].time } : null);
+  const lastPoint = data.length > 0 ? data[data.length - 1] : null;
+  const shown = cursor ?? (lastPoint
+    ? { price: liveValue ?? lastPoint.value, time: lastPoint.time }
+    : null);
 
   return (
     <div ref={containerRef} className="relative w-full h-full">
-      {shown && (
+      {mounted && shown && (
         <div className="absolute top-2 left-3 z-10 pointer-events-none">
           <p className="text-lg font-semibold tracking-tight tabular-nums">₹{fmt(shown.price)}</p>
           <p className="text-[11px] text-muted-foreground tabular-nums">{fmtTime(shown.time)}</p>

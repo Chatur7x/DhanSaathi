@@ -130,7 +130,7 @@ export default function AlertsPage() {
                       </div>
                     </div>
                     <button onClick={() => setAlerts((a) => a.filter((x) => x.id !== alert.id))} aria-label={`Delete ${alert.symbol} alert`}
-                      className="p-2 rounded-lg text-muted-foreground/60 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                      className="p-2 rounded-lg text-muted-foreground/60 hover:text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors">
                       <Trash2 size={15} />
                     </button>
                   </div>

@@ -6,13 +6,34 @@ import { GlowCard } from "@/components/premium/glow-card";
 import { LivePulse } from "@/components/premium/animated-counter";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import { getQuotes, getTopMovers, getCrypto, getForex } from "@/lib/api";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 20, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring" as const, stiffness: 300, damping: 25 } } };
+
+interface MarketRow {
+  symbol: string;
+  price: number;
+  change: number;
+  changePercent: number;
+}
+
+const toNum = (v: unknown): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+/** Guarantee numeric fields — API rows occasionally omit them. */
+const normalize = (rows: MarketRow[]): MarketRow[] =>
+  rows.map((r) => ({
+    symbol: String(r.symbol),
+    price: toNum(r.price),
+    change: toNum(r.change),
+    changePercent: toNum(r.changePercent),
+  }));
 
 export default function MarketsPage() {
   const [search, setSearch] = useState("");
@@ -48,11 +69,11 @@ export default function MarketsPage() {
   });
 
   const q = search.trim().toLowerCase();
-  const match = (s: string) => !q || s.toLowerCase().includes(q);
-  const fGlobal = useMemo(() => (globalMarkets || []).filter((x: any) => match(String(x.symbol))), [globalMarkets, q]);
-  const fCrypto = useMemo(() => (crypto || []).filter((x: any) => match(String(x.symbol))), [crypto, q]);
-  const fForex = useMemo(() => (forex || []).filter((x: any) => match(String(x.symbol))), [forex, q]);
-  const fMovers = useMemo(() => (movers || []).filter((x: any) => match(String(x.symbol))), [movers, q]);
+  const match = useCallback((s: string) => !q || s.toLowerCase().includes(q), [q]);
+  const fGlobal = useMemo(() => normalize(((globalMarkets || []) as MarketRow[]).filter((x) => match(String(x.symbol)))), [globalMarkets, match]);
+  const fCrypto = useMemo(() => normalize(((crypto || []) as MarketRow[]).filter((x) => match(String(x.symbol)))), [crypto, match]);
+  const fForex = useMemo(() => normalize(((forex || []) as MarketRow[]).filter((x) => match(String(x.symbol)))), [forex, match]);
+  const fMovers = useMemo(() => normalize(((movers || []) as MarketRow[]).filter((x) => match(String(x.symbol)))), [movers, match]);
 
   return (
     <AppShell>
@@ -75,11 +96,11 @@ export default function MarketsPage() {
 
         {/* Global Indices */}
         <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {(fGlobal).map((idx: any, i: number) => (
+          {(fGlobal).map((idx: MarketRow, i: number) => (
             <GlowCard key={i} glowColor={idx.change >= 0 ? "#10b981" : "#ef4444"}>
-              <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">{idx.symbol.replace('^', '')}</p>
-              <p className="text-lg font-bold text-white mt-1">{idx.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
-              <p className={`text-xs font-semibold mt-0.5 ${idx.change >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{idx.symbol.replace('^', '')}</p>
+              <p className="text-lg font-bold text-foreground mt-1">{idx.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+              <p className={`text-xs font-semibold mt-0.5 ${idx.change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                 {idx.change >= 0 ? "+" : ""}{idx.change} ({idx.changePercent}%)
               </p>
             </GlowCard>
@@ -90,16 +111,16 @@ export default function MarketsPage() {
           {/* Crypto */}
           <motion.div variants={item}>
             <GlowCard glowColor="#f59e0b">
-              <h3 className="font-bold text-white mb-4 flex items-center gap-2">Crypto (Coinlayer)</h3>
+              <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">Crypto (Coinlayer)</h3>
               <div className="space-y-0.5">
-                {(fCrypto).map((s: any, i: number) => (
+                {(fCrypto).map((s: MarketRow, i: number) => (
                   <motion.div key={s.symbol} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05, type: "spring" as const, stiffness: 300, damping: 25 }}
-                    className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors">
-                    <p className="text-sm font-bold text-white">{s.symbol.replace('-USD', '')}</p>
+                    className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-accent/60 transition-colors">
+                    <p className="text-sm font-bold text-foreground">{s.symbol.replace('-USD', '')}</p>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-white">${Number(s.price).toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
-                      <p className={`text-xs font-bold ${s.changePercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                      <p className="text-sm font-semibold text-foreground">${Number(s.price).toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+                      <p className={`text-xs font-bold ${s.changePercent >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                         {s.changePercent >= 0 ? "+" : ""}{s.changePercent}%
                       </p>
                     </div>
@@ -112,16 +133,16 @@ export default function MarketsPage() {
           {/* Forex */}
           <motion.div variants={item}>
             <GlowCard glowColor="#06b6d4">
-              <h3 className="font-bold text-white mb-4 flex items-center gap-2">Forex (Fixer)</h3>
+              <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">Forex (Fixer)</h3>
               <div className="space-y-0.5">
-                {(fForex).map((s: any, i: number) => (
+                {(fForex).map((s: MarketRow, i: number) => (
                   <motion.div key={s.symbol} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05, type: "spring" as const, stiffness: 300, damping: 25 }}
-                    className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors">
-                    <p className="text-sm font-bold text-white">{s.symbol}</p>
+                    className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-accent/60 transition-colors">
+                    <p className="text-sm font-bold text-foreground">{s.symbol}</p>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-white">${Number(s.price).toLocaleString("en-US", { minimumFractionDigits: 4 })}</p>
-                      <p className={`text-xs font-bold ${s.changePercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                      <p className="text-sm font-semibold text-foreground">${Number(s.price).toLocaleString("en-US", { minimumFractionDigits: 4 })}</p>
+                      <p className={`text-xs font-bold ${s.changePercent >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                         {s.changePercent >= 0 ? "+" : ""}{s.changePercent}%
                       </p>
                     </div>
@@ -134,16 +155,16 @@ export default function MarketsPage() {
           {/* Top Movers (NSE) */}
           <motion.div variants={item}>
             <GlowCard glowColor="#6366f1">
-              <h3 className="font-bold text-white mb-4 flex items-center gap-2"><TrendingUp size={18} className="text-indigo-400" /> NSE Top Movers</h3>
+              <h3 className="font-bold text-foreground mb-4 flex items-center gap-2"><TrendingUp size={18} className="text-primary" /> NSE Top Movers</h3>
               <div className="space-y-0.5">
-                {(fMovers).map((s: any, i: number) => (
+                {(fMovers).map((s: MarketRow, i: number) => (
                   <motion.div key={s.symbol} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05, type: "spring" as const, stiffness: 300, damping: 25 }}
-                    className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-white/[0.02] transition-colors">
-                    <p className="text-sm font-bold text-white">{s.symbol}</p>
+                    className="flex justify-between items-center px-3 py-2.5 rounded-xl hover:bg-accent/60 transition-colors">
+                    <p className="text-sm font-bold text-foreground">{s.symbol}</p>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-white">₹{s.price.toFixed(2)}</p>
-                      <p className={`text-xs font-bold ${s.change >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                      <p className="text-sm font-semibold text-foreground">₹{s.price.toFixed(2)}</p>
+                      <p className={`text-xs font-bold ${s.change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                         {s.change >= 0 ? "+" : ""}{s.change}%
                       </p>
                     </div>

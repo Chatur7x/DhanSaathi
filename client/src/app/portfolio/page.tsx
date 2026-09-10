@@ -95,7 +95,7 @@ export default function PortfolioPage() {
         <AnimatePresence>
           {showToast && (
             <motion.div initial={{ opacity: 0, y: -15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }}
-              className="flex items-center gap-2 px-4 py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-semibold text-sm"
+              className="flex items-center gap-2 px-4 py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-sm"
             >
               <ArrowUpRight size={16} /> {toastMsg || "Trade executed successfully!"}
             </motion.div>
@@ -112,8 +112,8 @@ export default function PortfolioPage() {
           ].map((card, i) => (
             <GlowCard key={i} glowColor={card.color}>
               <card.icon size={20} style={{ color: card.color }} />
-              <p className="text-[0.65rem] text-slate-500 uppercase tracking-wider font-semibold mt-2">{card.label}</p>
-              <p className="text-lg font-bold text-white mt-0.5">
+              <p className="text-[0.65rem] text-muted-foreground uppercase tracking-wider font-semibold mt-2">{card.label}</p>
+              <p className="text-lg font-bold text-foreground mt-0.5">
                 <AnimatedCounter value={card.value} prefix={card.suffix ? "" : "₹"} suffix={card.suffix || ""} decimals={card.suffix ? 1 : 0} />
               </p>
             </GlowCard>
@@ -121,7 +121,7 @@ export default function PortfolioPage() {
         </motion.div>
 
         {/* Tabs */}
-        <motion.div variants={item} className="flex gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800">
+        <motion.div variants={item} className="flex gap-1 p-1 rounded-xl bg-card border border-border">
           {([
             { key: "holdings", label: "Holdings", icon: BarChart3 },
             { key: "allocation", label: "Allocation", icon: Wallet },
@@ -131,7 +131,7 @@ export default function PortfolioPage() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.key ? "bg-indigo-500/15 text-indigo-400 border border-indigo-500/30" : "text-slate-500 hover:text-slate-300"
+                activeTab === tab.key ? "bg-primary/10 text-primary border border-primary/25" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <tab.icon size={15} /> {tab.label}
@@ -145,7 +145,7 @@ export default function PortfolioPage() {
             <motion.div key="hold" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }}
               transition={{ type: "spring" as const, stiffness: 300, damping: 25 }}>
               <GlowCard glowColor="#6366f1" className="p-4">
-                <h3 className="font-bold text-white mb-4">Holdings ({holdings.length})</h3>
+                <h3 className="font-bold text-foreground mb-4">Holdings ({holdings.length})</h3>
                 <div className="space-y-0.5">
                   {holdings.map((h, i) => {
                     const pnl = (h.currentPrice - h.buyPrice) * h.qty;
@@ -154,15 +154,15 @@ export default function PortfolioPage() {
                       <motion.div key={h.symbol}
                         initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.05, type: "spring" as const, stiffness: 300, damping: 25 }}
-                        className="flex justify-between items-center px-3 py-3 rounded-xl hover:bg-white/[0.02] transition-colors"
+                        className="flex justify-between items-center px-3 py-3 rounded-xl hover:bg-accent/60 transition-colors"
                       >
                         <div>
-                          <p className="text-sm font-bold text-white">{h.symbol}</p>
-                          <p className="text-xs text-slate-500">{h.qty} units @ ₹{h.buyPrice.toLocaleString("en-IN")}</p>
+                          <p className="text-sm font-bold text-foreground">{h.symbol}</p>
+                          <p className="text-xs text-muted-foreground">{h.qty} units @ ₹{h.buyPrice.toLocaleString("en-IN")}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-semibold text-white">₹{(h.qty * h.currentPrice).toLocaleString("en-IN")}</p>
-                          <p className={`text-xs font-semibold ${pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                          <p className="text-sm font-semibold text-foreground">₹{(h.qty * h.currentPrice).toLocaleString("en-IN")}</p>
+                          <p className={`text-xs font-semibold ${pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                             {pnl >= 0 ? "+" : ""}₹{pnl.toLocaleString("en-IN")} ({pnlPct.toFixed(1)}%)
                           </p>
                         </div>
@@ -178,15 +178,15 @@ export default function PortfolioPage() {
             <motion.div key="alloc" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }}
               transition={{ type: "spring" as const, stiffness: 300, damping: 25 }}>
               <GlowCard glowColor="#f59e0b">
-                <h3 className="font-bold text-white mb-4">Asset Allocation</h3>
+                <h3 className="font-bold text-foreground mb-4">Asset Allocation</h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={pieData} cx="50%" cy="50%" outerRadius={100} innerRadius={60} dataKey="value"
-                        label={({ name, percent }: any) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}>
+                        label={({ name, percent }: { name?: string; percent?: number }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}>
                         {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
-                      <Tooltip formatter={(v: any) => `₹${Number(v).toLocaleString("en-IN")}`}
+                      <Tooltip formatter={(v: unknown) => `₹${Number(v ?? 0).toLocaleString("en-IN")}`}
                         contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", color: "#fff" }} />
                     </PieChart>
                   </ResponsiveContainer>
@@ -199,14 +199,14 @@ export default function PortfolioPage() {
             <motion.div key="trade" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }}
               transition={{ type: "spring" as const, stiffness: 300, damping: 25 }}>
               <GlowCard glowColor={tradeForm.type === "BUY" ? "#10b981" : "#ef4444"} className="p-6">
-                <h3 className="font-bold text-white mb-5">Execute Trade</h3>
+                <h3 className="font-bold text-foreground mb-5">Execute Trade</h3>
                 <div className="flex gap-2 mb-5">
                   {(["BUY", "SELL"] as const).map(t => (
                     <button key={t} onClick={() => setTradeForm(f => ({ ...f, type: t }))}
                       className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${
                         tradeForm.type === t
-                          ? t === "BUY" ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-red-500/15 text-red-400 border border-red-500/30"
-                          : "bg-slate-800/50 text-slate-500 border border-slate-800"
+                          ? t === "BUY" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" : "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30"
+                          : "bg-accent/60 text-muted-foreground border border-border"
                       }`}>
                       {t === "BUY" ? <Plus size={14} className="inline mr-1" /> : <X size={14} className="inline mr-1" />}{t}
                     </button>
@@ -214,31 +214,31 @@ export default function PortfolioPage() {
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1.5 block">Symbol</label>
+                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1.5 block">Symbol</label>
                     <input value={tradeForm.symbol} onChange={e => setTradeForm(f => ({ ...f, symbol: e.target.value }))}
-                      placeholder="e.g. RELIANCE" className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm placeholder:text-slate-600 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
+                      placeholder="e.g. RELIANCE" className="w-full bg-accent/60 border border-border rounded-xl px-4 py-3 text-foreground text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1.5 block">Quantity</label>
+                      <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1.5 block">Quantity</label>
                       <input type="number" value={tradeForm.quantity} onChange={e => setTradeForm(f => ({ ...f, quantity: e.target.value }))}
-                        placeholder="10" className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm placeholder:text-slate-600 focus:border-indigo-500/50 outline-none transition-all" />
+                        placeholder="10" className="w-full bg-accent/60 border border-border rounded-xl px-4 py-3 text-foreground text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 outline-none transition-all" />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1.5 block">Price (₹)</label>
+                      <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1.5 block">Price (₹)</label>
                       <input type="number" value={tradeForm.price} onChange={e => setTradeForm(f => ({ ...f, price: e.target.value }))}
-                        placeholder="2450.00" className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm placeholder:text-slate-600 focus:border-indigo-500/50 outline-none transition-all" />
+                        placeholder="2450.00" className="w-full bg-accent/60 border border-border rounded-xl px-4 py-3 text-foreground text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 outline-none transition-all" />
                     </div>
                   </div>
                   {tradeForm.quantity && tradeForm.price && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-                      className="flex justify-between px-4 py-3 rounded-xl bg-white/[0.02] border border-slate-800">
-                      <span className="text-sm text-slate-400">Total Value</span>
-                      <span className="text-base font-bold text-white">₹{(parseFloat(tradeForm.quantity) * parseFloat(tradeForm.price)).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                      className="flex justify-between px-4 py-3 rounded-xl bg-accent/50 border border-border">
+                      <span className="text-sm text-muted-foreground">Total Value</span>
+                      <span className="text-base font-bold text-foreground">₹{(parseFloat(tradeForm.quantity) * parseFloat(tradeForm.price)).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                     </motion.div>
                   )}
                   <MagneticButton onClick={handleTrade}
-                    className={`w-full py-3.5 text-base ${tradeForm.type === "BUY" ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25" : "bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25"}`}>
+                    className={`w-full py-3.5 text-base ${tradeForm.type === "BUY" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25" : "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 hover:bg-red-500/25"}`}>
                     <DollarSign size={18} /> Execute {tradeForm.type} Order
                   </MagneticButton>
                 </div>

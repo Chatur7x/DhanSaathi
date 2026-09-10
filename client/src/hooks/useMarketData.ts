@@ -90,11 +90,12 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
   const [lastUpdate, setLastUpdate] = useState<string>("");
   const [connected, setConnected] = useState(false);
   const [connectionState, setConnectionState] =
-    useState<ConnectionState>("connecting");
-  const [loading, setLoading] = useState(true);
+    useState<ConnectionState>(autoConnect ? "connecting" : "disconnected");
+  const [loading, setLoading] = useState(autoConnect);
   const [status, setStatus] = useState<MarketStatus | null>(null);
   const [error, setError] = useState<MarketError | null>(null);
   const [subscriptions, setSubscriptions] = useState<string[]>([]);
+  const [quotesByTicker, setQuotesByTicker] = useState<Record<string, MarketQuote>>({});
 
   const quotesRef = useRef(new Map<string, MarketQuote>());
   const subsRef = useRef<Set<string>>(new Set(normalizeTickers(initialTickers)));
@@ -105,6 +106,7 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
   const publish = useCallback(() => {
     const arr = [...quotesRef.current.values()];
     setQuotes(arr);
+    setQuotesByTicker(Object.fromEntries(quotesRef.current.entries()));
   }, []);
 
   const applyTick = useCallback(
@@ -129,13 +131,6 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
     },
     [publish]
   );
-
-  const emitSubscribe = useCallback(() => {
-    const sock = socketRef.current;
-    if (sock && sock.connected && subsRef.current.size > 0) {
-      sock.emit("market:subscribe", { tickers: [...subsRef.current] });
-    }
-  }, []);
 
   const attachTickerListeners = useCallback(
     (sock: Socket, tickers: string[]) => {
@@ -226,11 +221,7 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
   }, [fetchSnapshot]);
 
   useEffect(() => {
-    if (!autoConnect) {
-      setConnectionState("disconnected");
-      setLoading(false);
-      return;
-    }
+    if (!autoConnect) return;
 
     let cancelled = false;
     let primary: Socket | null = null;
@@ -238,7 +229,11 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
     let fellBack = false;
     let everConnected = false;
 
-    void fetchSnapshot();
+    // Deferred past the effect body so the initial REST load never
+    // cascades synchronously off mount.
+    const fetchTimer = setTimeout(() => {
+      if (!cancelled) void fetchSnapshot();
+    }, 0);
 
     const wire = (sock: Socket, isFallback: boolean) => {
       sock.on("connect", () => {
@@ -299,7 +294,6 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
       });
     };
 
-    setConnectionState("connecting");
     primary = io(socketUrl, {
       transports: ["websocket", "polling"],
       reconnectionDelay: 1000,
@@ -310,6 +304,7 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
 
     return () => {
       cancelled = true;
+      clearTimeout(fetchTimer);
       primary?.disconnect();
       fallback?.disconnect();
       socketRef.current = null;
@@ -319,8 +314,6 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
     // Single connection per mount; subscription set lives in refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoConnect, socketUrl, restUrl, fallbackSocketUrl, fallbackRestUrl]);
-
-  const quotesByTicker = Object.fromEntries(quotesRef.current.entries());
 
   return {
     quotes,

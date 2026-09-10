@@ -60,26 +60,26 @@ export default function TradeSignalsPage() {
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="space-y-3 flex-1">
                     <div className="flex items-center gap-3">
-                      <span className="text-lg font-black text-white">{sig.symbol}</span>
+                      <span className="text-lg font-black text-foreground">{sig.symbol}</span>
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
-                        sig.type === "BUY" ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-red-500/15 text-red-400 border border-red-500/30"
+                        sig.type === "BUY" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" : "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30"
                       }`}>
                         {sig.type === "BUY" ? <TrendingUp size={12} className="inline mr-1" /> : <TrendingDown size={12} className="inline mr-1" />}
                         {sig.type}
                       </span>
-                      <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                      <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full bg-accent text-muted-foreground border border-border">
                         <Clock size={10} className="inline mr-1" />{sig.timeframe}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-400">{sig.reason}</p>
+                    <p className="text-sm text-muted-foreground">{sig.reason}</p>
                     <div className="flex gap-4">
                       {[
-                        { label: "Entry", value: `₹${sig.entry}`, color: "text-white" },
-                        { label: "Target", value: `₹${sig.target}`, color: "text-emerald-400" },
-                        { label: "Stop Loss", value: `₹${sig.sl}`, color: "text-red-400" },
+                        { label: "Entry", value: `₹${sig.entry}`, color: "text-foreground" },
+                        { label: "Target", value: `₹${sig.target}`, color: "text-emerald-600 dark:text-emerald-400" },
+                        { label: "Stop Loss", value: `₹${sig.sl}`, color: "text-red-600 dark:text-red-400" },
                       ].map(p => (
                         <div key={p.label}>
-                          <p className="text-[0.6rem] text-slate-600 uppercase tracking-widest font-semibold">{p.label}</p>
+                          <p className="text-[0.6rem] text-muted-foreground/70 uppercase tracking-widest font-semibold">{p.label}</p>
                           <p className={`text-sm font-bold ${p.color}`}>{p.value}</p>
                         </div>
                       ))}
@@ -98,9 +98,9 @@ export default function TradeSignalsPage() {
                           transition={{ duration: 1.5, ease: "easeOut" }}
                         />
                       </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{sig.confidence}%</span>
+                      <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-foreground">{sig.confidence}%</span>
                     </div>
-                    <p className="text-[0.6rem] text-slate-500 font-semibold">Confidence</p>
+                    <p className="text-[0.6rem] text-muted-foreground font-semibold">Confidence</p>
                   </div>
                 </div>
               </GlowCard>

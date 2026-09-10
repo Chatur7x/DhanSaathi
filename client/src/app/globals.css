@@ -131,14 +131,25 @@
   --down: #d96a4b;
 }
 
-/* OLED-black variant, toggled from Settings → Appearance */
+/* OLED-black variant, toggled from Settings → Appearance.
+   Self-contained: works on top of either light or dark base. */
 .midnight {
   --background: #000000;
+  --foreground: #ece6db;
   --card: #0c0a08;
-  --sidebar: #000000;
-  --muted: #141110;
+  --card-foreground: #ece6db;
+  --popover: #161210;
+  --popover-foreground: #ece6db;
   --secondary: #141110;
+  --secondary-foreground: #ece6db;
+  --muted: #141110;
+  --muted-foreground: #a39a8b;
   --accent: #141110;
+  --accent-foreground: #ece6db;
+  --border: rgba(236, 230, 219, 0.09);
+  --input: rgba(236, 230, 219, 0.13);
+  --sidebar: #000000;
+  --sidebar-foreground: #ece6db;
 }
 
 @layer base {

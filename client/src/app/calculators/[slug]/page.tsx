@@ -203,7 +203,6 @@ const CALCS: Record<string, CalcConfig> = {
           series.push({ label: `Y${Math.ceil(months / 12)}`, a: 0, b: Math.round(Math.max(0, bal)) });
         }
       }
-      const years = Math.floor(months / 12);
       return {
         results: [
           { label: "Lasts", value: months, format: (x) => `${Math.floor(x / 12)}y ${Math.round(x % 12)}m`, accent: "text-primary" },
