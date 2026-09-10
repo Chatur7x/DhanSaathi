@@ -61,6 +61,22 @@ function emitSnapshot(): void {
   });
 }
 
+/** Socket.io room carrying ticker-specific ticks for one display ticker. */
+function roomFor(ticker: string): string {
+  return `ticker:${ticker}`;
+}
+
+/** Resolve user input (display ticker or Yahoo symbol) to a display ticker. */
+function resolveTicker(input: unknown): string | null {
+  if (typeof input !== "string") return null;
+  const needle = input.trim().toUpperCase();
+  if (!needle) return null;
+  const found = getEnabledTickers().find(
+    (t) => t.symbol.toUpperCase() === needle || t.yahooSymbol.toUpperCase() === needle
+  );
+  return found ? found.symbol : null;
+}
+
 app.get("/health", (req, res) => {
   res.json({
     status: "healthy",
@@ -134,8 +150,9 @@ const scheduler = new TickerScheduler(getEnabledTickers(), {
       freshCount += 1;
     }
 
-    // Preserve Day-1 per-ticker + aggregate events.
-    io.emit(`market:tick:${quote.ticker}`, quote);
+    // Day-1 global aggregate (broadcast, kept for backward compatibility) +
+    // Day-3 ticker-specific event routed only to subscribed sockets.
+    io.to(roomFor(quote.ticker)).emit(`market:tick:${quote.ticker}`, quote);
     emitSnapshot();
 
     console.log(
@@ -168,11 +185,40 @@ function emitStatus(status: string, extra: Record<string, unknown> = {}): void {
 io.on("connection", (socket) => {
   console.log(`[Socket.io] Client connected: ${socket.id}`);
 
-  socket.emit("market:status", {
-    status: "connected",
-    timestamp: new Date().toISOString(),
-    message: "Connected to market-service",
-  });
+  // Day-3: per-socket subscription set (display tickers). Rooms carry
+  // ticker-specific ticks; the global market:tick still reaches everyone.
+  const subscriptions = new Set<string>();
+
+  const joinTickers = (tickers: string[]): void => {
+    for (const ticker of tickers) {
+      if (subscriptions.has(ticker)) continue;
+      subscriptions.add(ticker);
+      void socket.join(roomFor(ticker));
+    }
+  };
+
+  const leaveTickers = (tickers: string[]): void => {
+    for (const ticker of tickers) {
+      if (!subscriptions.has(ticker)) continue;
+      subscriptions.delete(ticker);
+      void socket.leave(roomFor(ticker));
+    }
+  };
+
+  const sendStatus = (status: string): void => {
+    socket.emit("market:status", {
+      status,
+      lastUpdate,
+      totalSymbols: getEnabledTickers().length,
+      liveQuotes: latestQuotes.size,
+      cachedQuotes: quoteCache.size(),
+      subscriptions: [...subscriptions],
+      timestamp: new Date().toISOString(),
+      message: status === "connected" ? "Connected to market-service" : undefined,
+    });
+  };
+
+  sendStatus("connected");
 
   // Immediately push the last snapshot so new clients don't wait.
   if (latestQuotes.size > 0) {
@@ -183,20 +229,65 @@ io.on("connection", (socket) => {
     });
   }
 
-  socket.on("market:subscribe", (data: { symbols?: string[] }) => {
-    const requestedSymbols = data?.symbols || [];
-    const validSymbols = requestedSymbols.filter((s) =>
-      getEnabledTickers().some((t) => t.yahooSymbol === s || t.symbol === s)
-    );
+  socket.on("market:subscribe", (data: { tickers?: unknown; symbols?: unknown }) => {
+    // Accept both { tickers: [...] } (Day-3) and { symbols: [...] } (Day-1).
+    const raw = Array.isArray(data?.tickers)
+      ? data.tickers
+      : Array.isArray(data?.symbols)
+        ? data.symbols
+        : [];
+    const valid: string[] = [];
+    const rejected: string[] = [];
+    for (const entry of raw) {
+      const resolved = resolveTicker(entry);
+      if (resolved) {
+        if (!valid.includes(resolved)) valid.push(resolved);
+      } else {
+        rejected.push(String(entry));
+      }
+    }
+
+    joinTickers(valid);
 
     socket.emit("market:subscribed", {
-      symbols: validSymbols,
+      symbols: [...subscriptions],
       timestamp: new Date().toISOString(),
     });
-    console.log(`[Socket.io] Client ${socket.id} subscribed to:`, validSymbols);
+    console.log(
+      `[Socket.io] Client ${socket.id} subscribed to:`,
+      valid.length > 0 ? valid.join(", ") : "(none)"
+    );
+    if (rejected.length > 0) {
+      console.warn(`[Socket.io] Client ${socket.id} sent invalid tickers:`, rejected.join(", "));
+    }
+  });
+
+  socket.on("market:unsubscribe", (data: { tickers?: unknown; symbols?: unknown }) => {
+    const raw = Array.isArray(data?.tickers)
+      ? data.tickers
+      : Array.isArray(data?.symbols)
+        ? data.symbols
+        : [];
+    const resolved = raw
+      .map((entry) => resolveTicker(entry))
+      .filter((t): t is string => t !== null);
+
+    leaveTickers(resolved);
+
+    socket.emit("market:unsubscribed", {
+      symbols: [...subscriptions],
+      timestamp: new Date().toISOString(),
+    });
   });
 
   socket.on("disconnect", (reason) => {
+    // Explicit cleanup: leave all ticker rooms, drop subscription state.
+    for (const ticker of subscriptions) {
+      void socket.leave(roomFor(ticker));
+    }
+    subscriptions.clear();
+    socket.removeAllListeners("market:subscribe");
+    socket.removeAllListeners("market:unsubscribe");
     console.log(`[Socket.io] Client disconnected: ${socket.id}, reason: ${reason}`);
   });
 });

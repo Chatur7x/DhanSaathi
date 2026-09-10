@@ -5,30 +5,8 @@ import { Activity, Zap } from "lucide-react";
 import { GlowCard } from "@/components/premium/glow-card";
 import { LivePulse } from "@/components/premium/animated-counter";
 import { AppShell } from "@/components/layout/app-shell";
-import { useEffect, useState, useCallback } from "react";
-import { io, Socket } from "socket.io-client";
-import { WS_URL, API_URL, MARKET_URL } from "@/lib/api-config";
-
-interface MarketQuote {
-  ticker: string;
-  symbol: string;
-  displayName: string;
-  category: string;
-  exchange: string;
-  price: number;
-  change: number;
-  changePercent: number;
-  volume: number;
-  high: number;
-  low: number;
-  open: number;
-  prevClose: number;
-  timestamp: string;
-  // Day-2 cache metadata (present on market-service quotes)
-  source?: "yahoo" | "cache";
-  stale?: boolean;
-  ageMs?: number;
-}
+import { useState } from "react";
+import { useMarketData, type MarketQuote } from "@/hooks/useMarketData";
 
 const item = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.2 } } };
 
@@ -76,92 +54,16 @@ function Skeleton() {
 }
 
 export default function LiveMarketsPage() {
-  const [quotes, setQuotes] = useState<MarketQuote[]>([]);
-  const [lastUpdate, setLastUpdate] = useState<string>("");
-  const [connected, setConnected] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { quotes, lastUpdate, loading, connectionState } = useMarketData();
   const [catFilter, setCatFilter] = useState<string>("all");
-
-  const handleTick = useCallback((data: { quotes: MarketQuote[]; timestamp: string }) => {
-    setQuotes(data.quotes);
-    setLastUpdate(data.timestamp);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    let primary: Socket | null = null;
-    let fallback: Socket | null = null;
-    let fellBack = false;
-
-    const attach = (s: Socket) => {
-      s.on("connect", () => { if (!cancelled) setConnected(true); });
-      s.on("disconnect", () => {
-        if (!cancelled) {
-          setConnected(
-            (primary?.connected || fallback?.connected) ?? false
-          );
-        }
-      });
-      s.on("market:tick", handleTick);
-    };
-
-    // 1. REST: Day-2 market-service (/quotes) first, main API fallback
-    fetch(`${MARKET_URL}/quotes`)
-      .then(r => {
-        if (!r.ok) throw new Error("market-service unavailable");
-        return r.json();
-      })
-      .then((data: { quotes: MarketQuote[]; timestamp: string }) => {
-        if (cancelled) return;
-        if (Array.isArray(data.quotes) && data.quotes.length > 0) {
-          setQuotes(data.quotes);
-          setLastUpdate(data.timestamp || new Date().toISOString());
-          setLoading(false);
-        } else {
-          throw new Error("empty market-service snapshot");
-        }
-      })
-      .catch(() => {
-        // Fallback: main backend ticker universe
-        fetch(`${API_URL}/api/market/tickers`)
-          .then(r => r.json())
-          .then((data: MarketQuote[]) => {
-            if (cancelled) return;
-            if (data.length > 0) {
-              setQuotes(data);
-              setLastUpdate(new Date().toISOString());
-              setLoading(false);
-            }
-          })
-          .catch(() => {});
-      });
-
-    // 2. WebSocket: market-service first, main server fallback (once)
-    primary = io(MARKET_URL, { transports: ["websocket", "polling"], reconnectionDelay: 1000, timeout: 5000 });
-    attach(primary);
-    primary.on("connect_error", () => {
-      if (cancelled || fellBack) return;
-      fellBack = true;
-      primary?.disconnect();
-      primary = null;
-      fallback = io(WS_URL, { transports: ["websocket", "polling"], reconnectionDelay: 1000 });
-      attach(fallback);
-    });
-
-    return () => {
-      cancelled = true;
-      primary?.disconnect();
-      fallback?.disconnect();
-    };
-  }, [handleTick]);
 
   if (loading) return <Skeleton />;
 
   const staleCount = quotes.filter(q => q.stale).length;
 
   const grouped = quotes.reduce((acc, q) => {
-    (acc[q.category] = acc[q.category] || []).push(q);
+    const key = q.category ?? "unknown";
+    (acc[key] = acc[key] || []).push(q);
     return acc;
   }, {} as Record<string, MarketQuote[]>);
 
@@ -180,7 +82,12 @@ export default function LiveMarketsPage() {
               <p className="text-xs text-slate-500">{lastUpdate && `Updated ${new Date(lastUpdate).toLocaleTimeString()} — ${quotes.length} tickers${staleCount > 0 ? ` — ${staleCount} cached` : ""}`}</p>
             </div>
           </div>
-          <LivePulse label={connected ? "LIVE" : "CONNECTING"} />
+          <LivePulse label={
+            connectionState === "connected" ? "LIVE"
+            : connectionState === "reconnecting" ? "RECONNECTING"
+            : connectionState === "error" ? "ERROR"
+            : "CONNECTING"
+          } />
         </motion.div>
 
         {/* Category filter */}
