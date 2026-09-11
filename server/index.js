@@ -10,7 +10,6 @@ const { NseIndia } = require('stock-nse-india');
 
 const nseIndia = new NseIndia();
 
-// Route imports
 const aiRoutes = require('./routes/ai');
 const authRoutes = require('./routes/auth');
 const paperTradingRoutes = require('./routes/paperTrading');
@@ -27,9 +26,9 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       callback(null, true);
     } else {
@@ -44,27 +43,20 @@ app.use(express.json());
 const fs = require('fs');
 const clientDist = path.join(__dirname, '../client/dist');
 const clientIndex = path.join(clientDist, 'index.html');
-// Only serve static bundle when it actually exists (Next.js builds to client/.next, not client/dist).
+
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
 }
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ============================================
-// Mounted API Routes
-// ============================================
 app.use('/api/ai', aiRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/paper-trading', paperTradingRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 
-// ============================================
-// Market Data Routes (inline)
-// ============================================
 app.get('/api/market/quotes', async (req, res) => {
   try {
     const symbols = (req.query.symbols || '').split(',').filter(Boolean);
@@ -85,6 +77,26 @@ app.get('/api/market/historical', async (req, res) => {
   }
 });
 
+app.get('/api/market/history/:ticker', async (req, res) => {
+  try {
+    const { ticker } = req.params;
+    const { range = '1M' } = req.query;
+    const data = await marketApi.getHistoryStrict(ticker, range);
+    res.json(data);
+  } catch (error) {
+    res.status(error.statusCode || 502).json({ error: error.message });
+  }
+});
+
+app.get('/api/market/fundamentals/:ticker', async (req, res) => {
+  try {
+    const data = await marketApi.getFundamentals(req.params.ticker);
+    res.json(data);
+  } catch (error) {
+    res.status(error.statusCode || 502).json({ error: error.message });
+  }
+});
+
 app.get('/api/market/indices', async (req, res) => {
   try {
     const indices = ['^NSEI', '^BSESN', '^NSEBANK', '^CNXIT'];
@@ -99,7 +111,7 @@ app.get('/api/market/movers', async (req, res) => {
   try {
     const symbols = ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'ITC.NS', 'TATAMOTORS.NS', 'SBIN.NS'];
     const quotes = await marketApi.getQuotes(symbols);
-    // Sort by absolute change percentage
+
     quotes.sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
     res.json(quotes.slice(0, 6));
   } catch (error) {
@@ -148,7 +160,6 @@ app.get('/api/market/forex', async (req, res) => {
   }
 });
 
-// SPA fallback (only when a static bundle exists; otherwise JSON 404)
 app.use((req, res) => {
   if (fs.existsSync(clientIndex)) {
     res.sendFile(clientIndex);
@@ -159,7 +170,7 @@ app.use((req, res) => {
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { 
+  cors: {
     origin: function (origin, callback) {
       if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
         callback(null, true);
@@ -167,25 +178,23 @@ const io = new Server(server, {
         callback(new Error('Not allowed by CORS'));
       }
     },
-    methods: ['GET', 'POST'] 
+    methods: ['GET', 'POST']
   }
 });
 
-// Emit Real Market Data every 15 seconds to avoid IP block
 setInterval(async () => {
   try {
     const indicesData = await nseIndia.getEquityStockIndices('NIFTY 50');
-    // Map NSE real data to the expected format
+
     if (indicesData && indicesData.data) {
       const realData = indicesData.data.slice(0, 15).map(item => ({
         symbol: item.symbol,
-        name: item.symbol, // or map to full name if needed
+        name: item.symbol,
         price: item.lastPrice,
         change: item.change,
         changePercent: item.pChange
       }));
-      
-      // Add custom Nifty entry to match frontend
+
       realData.unshift({
         symbol: '^NSEI',
         name: 'NIFTY 50',
@@ -201,7 +210,6 @@ setInterval(async () => {
   }
 }, 15000);
 
-// Emit market:tick with Yahoo Finance ticker universe data
 setInterval(async () => {
   try {
     const quotes = await marketApi.fetchAllTickerQuotes();
@@ -211,7 +219,7 @@ setInterval(async () => {
         timestamp: new Date().toISOString(),
         count: quotes.length,
       });
-      // Also emit individual ticker ticks
+
       quotes.forEach(q => {
         io.emit(`market:tick:${q.ticker}`, q);
       });
@@ -222,19 +230,17 @@ setInterval(async () => {
   }
 }, 15000);
 
-// Emit Real AI News periodically
 let lastNewsId = null;
 setInterval(async () => {
   try {
     const rssUrl = encodeURIComponent('https://economictimes.indiatimes.com/markets/rssfeeds/2146842.cms');
     const res = await axios.get(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
-    
+
     if (res.data && res.data.items && res.data.items.length > 0) {
-      const latestItem = res.data.items[Math.floor(Math.random() * 5)]; // pick one of top 5 randomly to simulate flow
-      
-      // Simple mock sentiment analysis fallback (In production, use Gemini here)
+      const latestItem = res.data.items[Math.floor(Math.random() * 5)];
+
       const sentiment = latestItem.title.toLowerCase().includes('fall') || latestItem.title.toLowerCase().includes('loss') ? 'Bearish' : 'Bullish';
-      
+
       io.emit('aiNewsUpdate', {
         id: latestItem.guid || Date.now(),
         headline: latestItem.title,
@@ -246,9 +252,8 @@ setInterval(async () => {
   } catch (error) {
     console.error('Failed to fetch live AI news:', error.message);
   }
-}, 10000); // Emits real scraped news every 10 seconds
+}, 10000);
 
-// Socket.io
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
   socket.on('disconnect', () => console.log('Client disconnected:', socket.id));
