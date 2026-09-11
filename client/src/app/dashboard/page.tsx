@@ -65,7 +65,6 @@ export default function DashboardPage() {
     queryFn: () => getHistoricalData("^NSEI", periodMap[range]),
   });
 
-  // Static fallback series, generated once (never during render).
   const [fallbackSeries] = useState(() => {
     const now = Math.floor(Date.now() / 1000);
     return Array.from({ length: 30 }, (_, i) => ({
@@ -79,7 +78,7 @@ export default function DashboardPage() {
     if (rows && Array.isArray(rows) && rows.length > 0) {
       const mapped = rows
         .map((h) => ({
-          // Backend already returns unix `time`; ignore undated rows.
+
           time: h.time ?? 0,
           value: h.close || h.price || h.value || 0,
         }))
@@ -87,15 +86,14 @@ export default function DashboardPage() {
         .sort((a, b) => a.time - b.time);
       if (mapped.length > 0) return mapped;
     }
-    // Fallback static data if Yahoo Finance doesn't return anything
+
     return fallbackSeries;
   }, [historical, fallbackSeries]);
 
-  // Setup WebSocket connection to Real-time Express Engine
   useEffect(() => {
     const socket = io(WS_URL);
     socket.on("marketUpdate", (data: SocketTick[]) => {
-      // Find NIFTY 50
+
       const nifty = data.find((d) => d.symbol === "^NSEI" || d.name === "NIFTY 50");
       if (nifty) {
         setNiftyRealtime({ price: nifty.price, change: nifty.change });
@@ -108,7 +106,6 @@ export default function DashboardPage() {
   const niftyChange = niftyRealtime?.change || 187.45;
   const isUp = niftyChange >= 0;
 
-  // Real AI News from DB would go here, fallback for UI
   const aiNews = [
     { id: 1, headline: "RBI holds repo rate at 6.5%, signals continued support for growth", sentiment: "Bullish", time: "2m ago" },
     { id: 2, headline: "FII outflows reach ₹8,400 Cr in May — largest monthly exit in 6 months", sentiment: "Bearish", time: "12m ago" },
@@ -119,7 +116,7 @@ export default function DashboardPage() {
   return (
     <AppShell>
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-        {/* Hero */}
+        {}
           <motion.section variants={item} className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-8">
           <div className="relative z-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             <div className="space-y-2">
@@ -127,7 +124,7 @@ export default function DashboardPage() {
                 <h2 className="text-sm font-semibold text-muted-foreground tracking-wide uppercase">NIFTY 50</h2>
                 <LivePulse />
               </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+              <h1 className="font-display text-4xl md:text-5xl mt-1 text-foreground">
                 ₹<AnimatedCounter value={niftyPrice} decimals={2} />
               </h1>
               <div className={`flex items-center gap-1.5 text-sm font-semibold ${isUp ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
@@ -158,7 +155,7 @@ export default function DashboardPage() {
           </div>
         </motion.section>
 
-        {/* Stats Grid */}
+        {}
         <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: "Portfolio Value", value: `₹${portfolio.totalValue.toLocaleString("en-IN")}`, icon: Wallet, color: "text-primary", bg: "bg-primary/10" },
@@ -176,7 +173,7 @@ export default function DashboardPage() {
           ))}
         </motion.div>
 
-        {/* AI News Ticker */}
+        {}
         <motion.div
           variants={item}
           className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-purple-500/20 bg-purple-500/5"
@@ -203,9 +200,9 @@ export default function DashboardPage() {
           </AnimatePresence>
         </motion.div>
 
-        {/* Two Column */}
+        {}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Market Watch */}
+          {}
           <motion.div variants={item}>
             <GlowCard glowColor="#6366f1">
               <div className="flex items-center justify-between mb-5">
@@ -240,7 +237,7 @@ export default function DashboardPage() {
             </GlowCard>
           </motion.div>
 
-          {/* AI News */}
+          {}
           <motion.div variants={item}>
               <GlowCard className="bg-card">
               <div className="flex items-center justify-between mb-5">

@@ -5,13 +5,12 @@ const jwt = require('jsonwebtoken');
 const router = express.Router();
 const db = new sqlite3('dhansaathi.db');
 
-// Middleware to protect routes
 const authMiddleware = (req, res, next) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token || token === 'null') {
-    // Demo mode: default to user 1 if not logged in
+
     req.userId = 1;
-    // ensure user 1 exists
+
     db.prepare('INSERT OR IGNORE INTO users (id, email, password, name) VALUES (1, "demo@demo.com", "demo", "Demo User")').run();
     return next();
   }
@@ -20,14 +19,13 @@ const authMiddleware = (req, res, next) => {
     req.userId = decoded.id;
     next();
   } catch (error) {
-    req.userId = 1; // Fallback for demo
+    req.userId = 1;
     next();
   }
 };
 
 const marketApi = require('../services/marketApi');
 
-// Get user's portfolio
 router.get('/', authMiddleware, (req, res) => {
   try {
     const portfolios = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').all(req.userId);
@@ -37,18 +35,17 @@ router.get('/', authMiddleware, (req, res) => {
   }
 });
 
-// Get portfolio summary
 router.get('/summary', authMiddleware, async (req, res) => {
   try {
     const portfolios = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').all(req.userId);
-    
+
     if (portfolios.length === 0) {
       return res.json({ totalValue: 0, totalInvested: 0, todaysPnl: 0, overallPnl: 0, overallPnlPercentage: 0 });
     }
 
     const symbols = portfolios.map(p => p.symbol);
     const quotes = await marketApi.getQuotes(symbols);
-    
+
     let totalValue = 0;
     let totalInvested = 0;
     let todaysPnl = 0;
@@ -57,7 +54,7 @@ router.get('/summary', authMiddleware, async (req, res) => {
       const quote = quotes.find(q => q.symbol === p.symbol);
       const currentPrice = quote ? quote.price : p.buy_price;
       const change = quote ? quote.change : 0;
-      
+
       totalInvested += (p.buy_price * p.quantity);
       totalValue += (currentPrice * p.quantity);
       todaysPnl += (change * p.quantity);
@@ -78,16 +75,14 @@ router.get('/summary', authMiddleware, async (req, res) => {
   }
 });
 
-// Add new holding
 router.post('/', authMiddleware, (req, res) => {
   try {
     const { symbol, quantity, buy_price, asset_type } = req.body;
-    
-    // Check if exists, then update or insert
+
     const existing = db.prepare('SELECT * FROM portfolios WHERE user_id = ? AND symbol = ?').get(req.userId, symbol);
-    
+
     if (existing) {
-      // Average price logic
+
       const totalQty = existing.quantity + quantity;
       const avgPrice = ((existing.buy_price * existing.quantity) + (buy_price * quantity)) / totalQty;
       const stmt = db.prepare('UPDATE portfolios SET quantity = ?, buy_price = ? WHERE id = ?');
@@ -96,44 +91,40 @@ router.post('/', authMiddleware, (req, res) => {
       const stmt = db.prepare('INSERT INTO portfolios (user_id, symbol, quantity, buy_price, asset_type) VALUES (?, ?, ?, ?, ?)');
       stmt.run(req.userId, symbol, quantity, buy_price, asset_type || 'Stocks');
     }
-    
-    // Log transaction
+
     db.prepare('INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)')
       .run(req.userId, 'BUY', quantity * buy_price, `Bought ${quantity} shares of ${symbol}`);
-      
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Database error' });
   }
 });
 
-// Sell holding
 router.post('/sell', authMiddleware, (req, res) => {
   try {
     const { symbol, quantity, sell_price } = req.body;
     const existing = db.prepare('SELECT * FROM portfolios WHERE user_id = ? AND symbol = ?').get(req.userId, symbol);
-    
+
     if (!existing || existing.quantity < quantity) {
       return res.status(400).json({ error: 'Not enough shares' });
     }
-    
+
     if (existing.quantity === quantity) {
       db.prepare('DELETE FROM portfolios WHERE id = ?').run(existing.id);
     } else {
       db.prepare('UPDATE portfolios SET quantity = quantity - ? WHERE id = ?').run(quantity, existing.id);
     }
-    
-    // Log transaction
+
     db.prepare('INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)')
       .run(req.userId, 'SELL', quantity * sell_price, `Sold ${quantity} shares of ${symbol}`);
-      
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Database error' });
   }
 });
 
-// Get transactions
 router.get('/transactions', authMiddleware, (req, res) => {
   try {
     const tx = db.prepare('SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC').all(req.userId);

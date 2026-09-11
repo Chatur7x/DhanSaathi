@@ -6,11 +6,11 @@ import {
 } from "./feeds/yahoo.js";
 
 export interface SchedulerOptions {
-  /** Called after each ticker fetch (success or stale-cache fallback). */
+
   onQuote?: (quote: MarketQuote, result: QuoteResult) => void;
-  /** Called when a ticker fails with no cache to fall back to. */
+
   onError?: (ticker: TickerConfig, error: string) => void;
-  /** Called after each full sweep decision (for status emission). */
+
   onCycle?: (info: {
     successful: number;
     failed: number;
@@ -25,15 +25,6 @@ interface Job {
   running: boolean;
 }
 
-/**
- * Per-ticker in-memory scheduler.
- *
- * - Each ticker gets its own setInterval driven by `refreshIntervalMs`
- *   from tickers.ts (never hard-coded here).
- * - `running` flag prevents overlapping fetches for the same ticker.
- * - Groups are naturally staggered because 15s / 30s / 60s intervals
- *   don't all fire together, keeping Yahoo request rate respectful.
- */
 export class TickerScheduler {
   private jobs = new Map<string, Job>();
   private stopped = false;
@@ -43,12 +34,10 @@ export class TickerScheduler {
     private options: SchedulerOptions = {}
   ) {}
 
-  /** Interval (ms) configured for a ticker symbol. */
   getIntervalMs(symbol: string): number | undefined {
     return this.jobs.get(symbol)?.ticker.refreshIntervalMs;
   }
 
-  /** All configured intervals — handy for tests / status endpoints. */
   getSchedule(): { symbol: string; refreshIntervalMs: number; running: boolean }[] {
     return [...this.jobs.values()].map((job) => ({
       symbol: job.ticker.symbol,
@@ -70,12 +59,10 @@ export class TickerScheduler {
       };
 
       job.timer = setInterval(tick, ticker.refreshIntervalMs);
-      // Don't keep the process alive on scheduler timers alone.
+
       if (typeof job.timer.unref === "function") job.timer.unref();
       this.jobs.set(ticker.symbol, job);
 
-      // Immediate first fetch so clients don't wait a full interval.
-      // Stagger slightly to avoid a thundering herd on boot.
       const staggerMs = Math.floor(Math.random() * 1500);
       setTimeout(() => {
         if (!this.stopped) void this.runOnce(job);
@@ -83,7 +70,6 @@ export class TickerScheduler {
     }
   }
 
-  /** Fetch one ticker now (respects the no-overlap guard). */
   async runOnce(jobOrSymbol: Job | string): Promise<QuoteResult | null> {
     const job =
       typeof jobOrSymbol === "string" ? this.jobs.get(jobOrSymbol) : jobOrSymbol;
@@ -114,7 +100,6 @@ export class TickerScheduler {
     }
   }
 
-  /** Fetch a single ticker by display symbol, outside the interval loop. */
   fetchNow(symbol: string): Promise<QuoteResult | null> {
     return this.runOnce(symbol);
   }

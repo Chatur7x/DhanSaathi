@@ -5,7 +5,6 @@ const path = require('path');
 const router = express.Router();
 const db = new sqlite3(path.join(__dirname, '..', 'dhansaathi.db'));
 
-// Create tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS paper_trades (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,7 +40,6 @@ db.exec(`
   );
 `);
 
-// GET /api/paper-trading/sessions — Get all sessions
 router.get('/sessions', (req, res) => {
   try {
     const sessions = db.prepare('SELECT * FROM paper_sessions ORDER BY updated_at DESC').all();
@@ -51,7 +49,6 @@ router.get('/sessions', (req, res) => {
   }
 });
 
-// POST /api/paper-trading/sessions — Create new session
 router.post('/sessions', (req, res) => {
   try {
     const { name, initialBalance } = req.body;
@@ -68,7 +65,6 @@ router.post('/sessions', (req, res) => {
   }
 });
 
-// GET /api/paper-trading/sessions/:id — Get session details with holdings
 router.get('/sessions/:id', (req, res) => {
   try {
     const session = db.prepare('SELECT * FROM paper_sessions WHERE id = ?').get(req.params.id);
@@ -83,7 +79,6 @@ router.get('/sessions/:id', (req, res) => {
   }
 });
 
-// POST /api/paper-trading/trade — Execute a paper trade
 router.post('/trade', (req, res) => {
   try {
     const { sessionId, symbol, action, quantity, price } = req.body;
@@ -101,11 +96,9 @@ router.post('/trade', (req, res) => {
         return res.status(400).json({ error: 'Insufficient balance' });
       }
 
-      // Deduct balance
       db.prepare('UPDATE paper_sessions SET current_balance = current_balance - ?, total_trades = total_trades + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
         .run(total, sessionId);
 
-      // Update or create holding
       const existing = db.prepare('SELECT * FROM paper_holdings WHERE session_id = ? AND symbol = ?').get(sessionId, symbol);
       if (existing) {
         const newQty = existing.quantity + quantity;
@@ -122,16 +115,13 @@ router.post('/trade', (req, res) => {
         return res.status(400).json({ error: 'Insufficient holdings' });
       }
 
-      // Add balance
       db.prepare('UPDATE paper_sessions SET current_balance = current_balance + ?, total_trades = total_trades + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
         .run(total, sessionId);
 
-      // Calculate P&L
       const pnl = (price - existing.avg_price) * quantity;
       db.prepare('UPDATE paper_sessions SET total_pnl = total_pnl + ?, win_count = win_count + ?, loss_count = loss_count + ? WHERE id = ?')
         .run(pnl, pnl > 0 ? 1 : 0, pnl <= 0 ? 1 : 0, sessionId);
 
-      // Update holdings
       const newQty = existing.quantity - quantity;
       if (newQty === 0) {
         db.prepare('DELETE FROM paper_holdings WHERE id = ?').run(existing.id);
@@ -140,11 +130,9 @@ router.post('/trade', (req, res) => {
       }
     }
 
-    // Record trade
     db.prepare('INSERT INTO paper_trades (session_id, symbol, action, quantity, price, total) VALUES (?, ?, ?, ?, ?, ?)')
       .run(sessionId, symbol, action, quantity, price, total);
 
-    // Return updated session
     const updated = db.prepare('SELECT * FROM paper_sessions WHERE id = ?').get(sessionId);
     const holdings = db.prepare('SELECT * FROM paper_holdings WHERE session_id = ?').all(sessionId);
     const trades = db.prepare('SELECT * FROM paper_trades WHERE session_id = ? ORDER BY created_at DESC LIMIT 20').all(sessionId);
@@ -155,7 +143,6 @@ router.post('/trade', (req, res) => {
   }
 });
 
-// DELETE /api/paper-trading/sessions/:id — Delete session
 router.delete('/sessions/:id', (req, res) => {
   try {
     db.prepare('DELETE FROM paper_trades WHERE session_id = ?').run(req.params.id);

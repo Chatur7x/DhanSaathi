@@ -48,16 +48,9 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ————————————————————————————————————————
-   DhanSaathi minimal system
-   Apple type + Claude warmth. Warm paper light,
-   warm charcoal dark. Single terracotta accent.
-   ———————————————————————————————————————— */
-
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
 
-  /* Claude paper */
   --background: #faf8f4;
   --foreground: #1f1c18;
   --card: #ffffff;
@@ -92,10 +85,12 @@
   --sidebar-ring: #c15f3c;
   --up: #3d8b4f;
   --down: #c2402a;
+  --paper-shadow: 0 1px 2px rgba(93, 64, 28, 0.07), 0 12px 32px -16px rgba(93, 64, 28, 0.22);
+  --paper-grain-opacity: 0.07;
 }
 
 .dark {
-  /* Warm charcoal — calm, never pure black */
+
   --background: #171310;
   --foreground: #ece6db;
   --card: #1f1a15;
@@ -129,10 +124,10 @@
   --sidebar-ring: #d97757;
   --up: #7fb069;
   --down: #d96a4b;
+  --paper-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 44px -18px rgba(0, 0, 0, 0.65);
+  --paper-grain-opacity: 0.05;
 }
 
-/* OLED-black variant, toggled from Settings → Appearance.
-   Self-contained: works on top of either light or dark base. */
 .midnight {
   --background: #000000;
   --foreground: #ece6db;
@@ -169,7 +164,7 @@
   ::selection {
     background: color-mix(in srgb, var(--primary) 30%, transparent);
   }
-  /* Slim, quiet scrollbars */
+
   * {
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--muted-foreground) 35%, transparent) transparent;
@@ -185,7 +180,7 @@
   *::-webkit-scrollbar-track {
     background: transparent;
   }
-  /* Apple-style range sliders */
+
   input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
@@ -236,12 +231,26 @@
 }
 
 @layer utilities {
-  /* Tiny caps eyebrow label, Apple-style */
   .eyebrow {
     font-size: 0.65rem;
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted-foreground);
+  }
+
+  .font-display {
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Charter, "Times New Roman", serif;
+    letter-spacing: -0.01em;
+  }
+
+  .grain-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    pointer-events: none;
+    opacity: var(--paper-grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
   }
 }

@@ -15,7 +15,7 @@ export interface TickerConfig {
 }
 
 export const TICKER_UNIVERSE: TickerConfig[] = [
-  // Indian Markets
+
   {
     symbol: "NIFTY",
     displayName: "NIFTY 50",
@@ -35,7 +35,6 @@ export const TICKER_UNIVERSE: TickerConfig[] = [
     enabled: true,
   },
 
-  // US Markets — 30s per Day-2 spec
   {
     symbol: "SPX",
     displayName: "S&P 500",
@@ -64,7 +63,6 @@ export const TICKER_UNIVERSE: TickerConfig[] = [
     enabled: true,
   },
 
-  // Crypto — 30s per Day-2 spec
   {
     symbol: "BTC",
     displayName: "Bitcoin",
@@ -93,7 +91,6 @@ export const TICKER_UNIVERSE: TickerConfig[] = [
     enabled: true,
   },
 
-  // Commodities/ETFs — 60s per Day-2 spec
   {
     symbol: "GLD",
     displayName: "SPDR Gold Shares",

@@ -49,7 +49,6 @@ export default function AIInsightsPage() {
   const [expanded, setExpanded] = useState<number | string | null>(null);
   const [liveOn, setLiveOn] = useState(false);
 
-  // Live AI news pushed by the backend (RSS + sentiment, every ~10s)
   useEffect(() => {
     const socket = io(WS_URL, { transports: ["websocket", "polling"] });
     socket.on("connect", () => setLiveOn(true));
@@ -77,7 +76,7 @@ export default function AIInsightsPage() {
 
   const refresh = () => {
     setLoading(true);
-    setLive([]); // drop the live buffer — fresh wire items stream back in
+    setLive([]);
     setTimeout(() => setLoading(false), 800);
   };
 
@@ -110,7 +109,7 @@ export default function AIInsightsPage() {
           />
         </motion.div>
 
-        {/* Sentiment Overview */}
+        {}
         <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-6 gap-3">
           <GlowCard className="col-span-2 md:col-span-2 !p-5">
             <p className="eyebrow mb-2">Overall Market</p>
@@ -131,7 +130,7 @@ export default function AIInsightsPage() {
           ))}
         </motion.div>
 
-        {/* News Feed */}
+        {}
         <motion.div variants={item}>
           <div className="flex items-center gap-2 mb-3">
             <h2 className="text-[15px] font-semibold">News Feed</h2>

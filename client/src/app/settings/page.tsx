@@ -36,7 +36,6 @@ export default function SettingsPage() {
   const [settings, setSettings] = useLocalStorage<SettingsState>("ds-settings", DEFAULTS);
   const { setTheme } = useTheme();
 
-  // Midnight = true OLED black variant layered over the warm dark theme.
   useEffect(() => {
     setTheme("dark");
     document.documentElement.classList.toggle("midnight", settings.midnight);

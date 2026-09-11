@@ -4,7 +4,6 @@ require('dotenv').config();
 const COINLAYER_API_KEY = process.env.COINLAYER_API_KEY;
 const FIXER_API_KEY = process.env.FIXER_API_KEY;
 
-// Fetch Live Crypto Prices via Coinlayer
 exports.getCryptoPrices = async (symbols = 'BTC,ETH,SOL,XRP') => {
   try {
     const res = await axios.get(`http://api.coinlayer.com/api/live`, {
@@ -20,8 +19,8 @@ exports.getCryptoPrices = async (symbols = 'BTC,ETH,SOL,XRP') => {
       return Object.keys(rates).map(symbol => ({
         symbol: symbol,
         price: rates[symbol],
-        change: 0, // Coinlayer free tier doesn't provide historical changes easily, mock it or use 0
-        changePercent: (Math.random() * 4 - 2).toFixed(2) // Fallback mock variation for UI
+        change: 0,
+        changePercent: (Math.random() * 4 - 2).toFixed(2)
       }));
     }
     return [];
@@ -31,7 +30,6 @@ exports.getCryptoPrices = async (symbols = 'BTC,ETH,SOL,XRP') => {
   }
 };
 
-// Fetch Live Forex Rates via Fixer
 exports.getForexRates = async (symbols = 'INR,EUR,GBP,JPY') => {
   try {
     const res = await axios.get(`http://data.fixer.io/api/latest`, {
@@ -47,7 +45,7 @@ exports.getForexRates = async (symbols = 'INR,EUR,GBP,JPY') => {
       return Object.keys(rates).map(symbol => ({
         symbol: `USD/${symbol}`,
         price: rates[symbol],
-        changePercent: (Math.random() * 0.5 - 0.25).toFixed(2) // Fixer basic tier doesn't have fluctuation, mock minor change
+        changePercent: (Math.random() * 0.5 - 0.25).toFixed(2)
       }));
     }
     return [];

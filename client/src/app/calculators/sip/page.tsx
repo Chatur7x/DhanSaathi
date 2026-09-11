@@ -45,7 +45,7 @@ export default function SIPCalculatorPage() {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Controls */}
+          {}
           <motion.div variants={item}>
             <GlowCard glowColor="#10b981" className="space-y-6">
               {[
@@ -81,7 +81,7 @@ export default function SIPCalculatorPage() {
             </GlowCard>
           </motion.div>
 
-          {/* Chart */}
+          {}
           <motion.div variants={item}>
             <GlowCard glowColor="#6366f1">
               <h3 className="font-bold text-foreground mb-4">Growth Projection</h3>

@@ -91,7 +91,7 @@ export default function PortfolioPage() {
           />
         </motion.div>
 
-        {/* Toast */}
+        {}
         <AnimatePresence>
           {showToast && (
             <motion.div initial={{ opacity: 0, y: -15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }}
@@ -102,7 +102,7 @@ export default function PortfolioPage() {
           )}
         </AnimatePresence>
 
-        {/* Summary Cards */}
+        {}
         <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: "Invested", value: totalInvested, icon: Wallet, color: "#6366f1" },
@@ -120,7 +120,7 @@ export default function PortfolioPage() {
           ))}
         </motion.div>
 
-        {/* Tabs */}
+        {}
         <motion.div variants={item} className="flex gap-1 p-1 rounded-xl bg-card border border-border">
           {([
             { key: "holdings", label: "Holdings", icon: BarChart3 },
@@ -139,7 +139,7 @@ export default function PortfolioPage() {
           ))}
         </motion.div>
 
-        {/* Tab Content */}
+        {}
         <AnimatePresence mode="wait">
           {activeTab === "holdings" && (
             <motion.div key="hold" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }}

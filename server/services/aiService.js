@@ -1,6 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Initialize with API key from env, fallback to demo mode
 const API_KEY = process.env.GEMINI_API_KEY || '';
 let genAI = null;
 let model = null;
@@ -25,7 +24,6 @@ Rules:
 5. Reference Indian market indices (Nifty 50, Sensex, Bank Nifty)
 6. Use Indian tax rules (FY 2025-26)`;
 
-// AI Chat — conversational financial assistant
 exports.chat = async (message, history = []) => {
   if (!model) {
     return getFallbackResponse(message);
@@ -51,7 +49,6 @@ exports.chat = async (message, history = []) => {
   }
 };
 
-// Portfolio Doctor — analyze holdings and give health report
 exports.analyzePortfolio = async (holdings) => {
   if (!model) {
     return getPortfolioDoctorFallback(holdings);
@@ -95,7 +92,6 @@ Only return valid JSON, no markdown.`;
   }
 };
 
-// Trade Signal Generator — analyze news and generate signals
 exports.generateTradeSignals = async (newsItems) => {
   if (!model) {
     return getTradeSignalsFallback(newsItems);
@@ -139,7 +135,6 @@ Only return valid JSON, no markdown.`;
   }
 };
 
-// Sentiment Analysis — score individual news items
 exports.analyzeSentiment = async (text) => {
   if (!model) {
     return { score: (Math.random() - 0.5) * 2, label: 'NEUTRAL' };
@@ -157,8 +152,6 @@ News: "${text}"`;
     return { score: 0, label: 'NEUTRAL' };
   }
 };
-
-// ======== Fallback responses when no API key ========
 
 function getFallbackResponse(message) {
   const lower = message.toLowerCase();

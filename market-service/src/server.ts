@@ -41,7 +41,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Latest known quotes (fresh or stale-marked), keyed by display ticker.
 const latestQuotes = new Map<string, MarketQuote>();
 let lastUpdate: string | null = null;
 let freshCount = 0;
@@ -61,12 +60,10 @@ function emitSnapshot(): void {
   });
 }
 
-/** Socket.io room carrying ticker-specific ticks for one display ticker. */
 function roomFor(ticker: string): string {
   return `ticker:${ticker}`;
 }
 
-/** Resolve user input (display ticker or Yahoo symbol) to a display ticker. */
 function resolveTicker(input: unknown): string | null {
   if (typeof input !== "string") return null;
   const needle = input.trim().toUpperCase();
@@ -92,7 +89,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Day-2 helpers for testing / debugging (read-only).
 app.get("/quotes", (req, res) => {
   res.json({
     quotes: snapshot(),
@@ -137,8 +133,6 @@ app.get("/schedule", (req, res) => {
   });
 });
 
-// --- Scheduler wiring -------------------------------------------------
-
 const scheduler = new TickerScheduler(getEnabledTickers(), {
   onQuote: (quote) => {
     latestQuotes.set(quote.ticker, quote);
@@ -150,8 +144,6 @@ const scheduler = new TickerScheduler(getEnabledTickers(), {
       freshCount += 1;
     }
 
-    // Day-1 global aggregate (broadcast, kept for backward compatibility) +
-    // Day-3 ticker-specific event routed only to subscribed sockets.
     io.to(roomFor(quote.ticker)).emit(`market:tick:${quote.ticker}`, quote);
     emitSnapshot();
 
@@ -160,7 +152,7 @@ const scheduler = new TickerScheduler(getEnabledTickers(), {
     );
   },
   onError: (ticker, error) => {
-    // No cache to fall back to → proper error, never an invented price.
+
     const payload = {
       failed: [{ yahooSymbol: ticker.yahooSymbol, ticker: ticker.symbol, error }],
       timestamp: new Date().toISOString(),
@@ -185,8 +177,6 @@ function emitStatus(status: string, extra: Record<string, unknown> = {}): void {
 io.on("connection", (socket) => {
   console.log(`[Socket.io] Client connected: ${socket.id}`);
 
-  // Day-3: per-socket subscription set (display tickers). Rooms carry
-  // ticker-specific ticks; the global market:tick still reaches everyone.
   const subscriptions = new Set<string>();
 
   const joinTickers = (tickers: string[]): void => {
@@ -220,7 +210,6 @@ io.on("connection", (socket) => {
 
   sendStatus("connected");
 
-  // Immediately push the last snapshot so new clients don't wait.
   if (latestQuotes.size > 0) {
     socket.emit("market:tick", {
       quotes: snapshot(),
@@ -230,7 +219,7 @@ io.on("connection", (socket) => {
   }
 
   socket.on("market:subscribe", (data: { tickers?: unknown; symbols?: unknown }) => {
-    // Accept both { tickers: [...] } (Day-3) and { symbols: [...] } (Day-1).
+
     const raw = Array.isArray(data?.tickers)
       ? data.tickers
       : Array.isArray(data?.symbols)
@@ -281,7 +270,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", (reason) => {
-    // Explicit cleanup: leave all ticker rooms, drop subscription state.
+
     for (const ticker of subscriptions) {
       void socket.leave(roomFor(ticker));
     }
@@ -307,7 +296,6 @@ httpServer.listen(PORT, () => {
 
   scheduler.start();
 
-  // Periodic aggregate status (Day-1 clients rely on market:status).
   const statusTimer = setInterval(() => emitStatus("updating"), 15000);
   if (typeof statusTimer.unref === "function") statusTimer.unref();
 

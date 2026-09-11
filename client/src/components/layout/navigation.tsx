@@ -34,7 +34,7 @@ export function Sidebar() {
       transition={{ type: "spring", stiffness: 320, damping: 32 }}
       className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 z-40 border-r border-border bg-sidebar/90 backdrop-blur-xl"
     >
-      {/* Logo */}
+      {}
       <div className="flex items-center gap-3 px-5 h-16 border-b border-border">
         <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-semibold text-[15px] shrink-0">
           ₹
@@ -50,7 +50,7 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Nav */}
+      {}
       <nav className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const active = pathname === item.href;
@@ -79,7 +79,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Collapse Toggle */}
+      {}
       <button
         onClick={() => setCollapsed(!collapsed)}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}

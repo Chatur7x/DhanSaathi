@@ -26,7 +26,7 @@ export default function OptionsChainPage() {
   const { data: chain, isLoading } = useQuery({
     queryKey: ["optionChain", symbol],
     queryFn: () => getOptionChain(symbol),
-    refetchInterval: 30000, // Refresh every 30s
+    refetchInterval: 30000,
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -50,14 +50,14 @@ export default function OptionsChainPage() {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Real-time options data from Yahoo Finance</p>
           </div>
-          
+
           <form onSubmit={handleSearch} className="relative">
             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input 
-              value={searchInput} 
-              onChange={e => setSearchInput(e.target.value)} 
+            <input
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
               placeholder="Search symbol (e.g. ^NSEI, AAPL)"
-              className="w-full sm:w-64 bg-accent/60 border border-border rounded-xl pl-11 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 outline-none transition-all" 
+              className="w-full sm:w-64 bg-accent/60 border border-border rounded-xl pl-11 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 outline-none transition-all"
             />
           </form>
         </motion.div>
@@ -86,9 +86,9 @@ export default function OptionsChainPage() {
                       <th className="px-4 py-3 text-right">Vol</th>
                       <th className="px-4 py-3 text-right">Chg</th>
                       <th className="px-4 py-3 text-right border-r border-border">LTP</th>
-                      
+
                       <th className="px-4 py-3 text-center bg-accent/50">PRICE</th>
-                      
+
                       <th className="px-4 py-3 text-left border-l border-border">LTP</th>
                       <th className="px-4 py-3 text-left">Chg</th>
                       <th className="px-4 py-3 text-left">Vol</th>
@@ -99,9 +99,9 @@ export default function OptionsChainPage() {
                     {strikes.slice(0, 30).map((strike: number) => {
                       const call = calls.find((c: OptionLeg) => c.strike === strike);
                       const put = puts.find((p: OptionLeg) => p.strike === strike);
-                      
+
                       if (!call && !put) return null;
-                      
+
                       return (
                         <tr key={strike} className="hover:bg-accent/60 transition-colors">
                           <td className="px-4 py-3 text-right text-muted-foreground">{call?.openInterest || '-'}</td>
@@ -112,11 +112,11 @@ export default function OptionsChainPage() {
                           <td className="px-4 py-3 text-right font-bold text-foreground border-r border-border bg-emerald-500/5">
                             {call?.lastPrice?.toFixed(2) || '-'}
                           </td>
-                          
+
                           <td className="px-4 py-3 text-center font-black text-primary bg-accent/50">
                             {strike.toLocaleString()}
                           </td>
-                          
+
                           <td className="px-4 py-3 text-left font-bold text-foreground border-l border-border bg-red-500/5">
                             {put?.lastPrice?.toFixed(2) || '-'}
                           </td>

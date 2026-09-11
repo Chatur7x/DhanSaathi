@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 interface GlowCardProps {
   children: React.ReactNode;
   className?: string;
-  /** Kept for API compatibility — now a whisper of warmth, not neon. */
+
   glowColor?: string;
 }
 
@@ -31,9 +31,10 @@ export function GlowCard({ children, className, glowColor = "#d97757" }: GlowCar
       whileHover={{ y: -1 }}
       transition={{ type: "spring", stiffness: 400, damping: 28 }}
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition-colors",
+        "relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition-colors transition-shadow duration-300",
         className
       )}
+      style={{ boxShadow: "var(--paper-shadow)" }}
     >
       <div
         className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-500"

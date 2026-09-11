@@ -22,11 +22,11 @@ export interface MarketQuote {
   open: number;
   prevClose: number;
   timestamp: string;
-  /** "yahoo" = fresh, "cache" = last-known-price fallback */
+
   source: QuoteSource;
-  /** true when served from cache after Yahoo failure */
+
   stale: boolean;
-  /** ms since the price was cached (0 for fresh quotes) */
+
   ageMs: number;
 }
 
@@ -42,7 +42,6 @@ export interface BatchQuoteResult {
   timestamp: string;
 }
 
-/** In-flight dedupe: same yahooSymbol never triggers 2 concurrent Yahoo calls. */
 const inFlight = new Map<string, Promise<MarketQuote>>();
 
 function buildFreshQuote(yahooSymbol: string, quote: any): MarketQuote {
@@ -113,13 +112,12 @@ async function fetchSingleQuoteWithRetry(yahooSymbol: string): Promise<MarketQuo
 async function fetchSingleQuote(yahooSymbol: string): Promise<QuoteResult> {
   try {
     const fresh = await fetchSingleQuoteWithRetry(yahooSymbol);
-    // SUCCESS → update last-known-price cache, return fresh quote
+
     quoteCache.set(fresh.ticker, fresh);
     return { success: true, data: fresh, yahooSymbol };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
 
-    // FAILURE → fall back to last-known-price cache when available
     const tickerConfig = getTickerByYahooSymbol(yahooSymbol);
     const cacheKey = tickerConfig?.symbol || yahooSymbol;
     const staleQuote = quoteCache.getStaleQuote(cacheKey);
@@ -131,7 +129,6 @@ async function fetchSingleQuote(yahooSymbol: string): Promise<QuoteResult> {
       return { success: true, data: staleQuote, yahooSymbol };
     }
 
-    // No cache → proper error. Never invent a price.
     return {
       success: false,
       error: `Yahoo Finance error for ${yahooSymbol}: ${message}`,
@@ -150,7 +147,6 @@ export async function fetchQuotes(
     };
   }
 
-  // Rate-limit awareness: dedupe identical symbols before fanning out.
   const uniqueSymbols = [...new Set(yahooSymbols)];
 
   const results = await Promise.all(

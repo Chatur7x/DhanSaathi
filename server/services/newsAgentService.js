@@ -3,7 +3,6 @@ const aiService = require('./aiService');
 
 const parser = new RSSParser();
 
-// RSS feeds for Indian financial news
 const RSS_FEEDS = [
   { url: 'https://economictimes.indiatimes.com/markets/rssfeeds/2146842.cms', source: 'Economic Times' },
   { url: 'https://www.livemint.com/rss/markets', source: 'LiveMint' },
@@ -13,9 +12,8 @@ const RSS_FEEDS = [
 let newsCache = [];
 let signalsCache = null;
 let lastFetch = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 min cache
+const CACHE_DURATION = 5 * 60 * 1000;
 
-// Fetch and aggregate news from multiple RSS sources
 exports.fetchAllNews = async () => {
   const now = Date.now();
   if (newsCache.length > 0 && (now - lastFetch) < CACHE_DURATION) {
@@ -40,7 +38,7 @@ exports.fetchAllNews = async () => {
           time: new Date(item.pubDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           date: new Date(item.pubDate).toISOString(),
           link: item.link,
-          sentiment: null, // Will be filled by AI
+          sentiment: null,
           impact: null
         }));
         allNews.push(...items);
@@ -50,14 +48,12 @@ exports.fetchAllNews = async () => {
     }
   }
 
-  // Sort by date, newest first
   allNews.sort((a, b) => new Date(b.date) - new Date(a.date));
   newsCache = allNews.slice(0, 20);
   lastFetch = now;
   return newsCache;
 };
 
-// Get AI-analyzed trade signals from news
 exports.getTradeSignals = async () => {
   try {
     const news = await exports.fetchAllNews();
@@ -74,14 +70,12 @@ exports.getTradeSignals = async () => {
   }
 };
 
-// Get sentiment-enriched news feed
 exports.getEnrichedNews = async () => {
   try {
     const news = await exports.fetchAllNews();
 
-    // Score sentiment for each item (with fallback)
     const enriched = news.map(item => {
-      const score = (Math.random() - 0.4) * 2; // fallback random
+      const score = (Math.random() - 0.4) * 2;
       return {
         ...item,
         sentiment: {

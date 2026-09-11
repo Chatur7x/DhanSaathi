@@ -2,7 +2,6 @@
 
 import type { LucideIcon } from "lucide-react";
 
-/** Minimal, consistent page header: eyebrow → title → subtitle. */
 export function PageHeader({
   icon: Icon,
   eyebrow,
@@ -24,7 +23,7 @@ export function PageHeader({
         </div>
         <div>
           <p className="eyebrow">{eyebrow}</p>
-          <h1 className="text-xl font-semibold tracking-tight mt-0.5">{title}</h1>
+          <h1 className="font-display text-[22px] font-semibold mt-0.5">{title}</h1>
           {subtitle && <p className="text-[13px] text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
       </div>

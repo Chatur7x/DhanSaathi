@@ -73,7 +73,7 @@ export default function LiveMarketsPage() {
   return (
     <AppShell>
       <div className="space-y-6">
-        {/* Header */}
+        {}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Activity size={28} className="text-primary" />
@@ -90,7 +90,7 @@ export default function LiveMarketsPage() {
           } />
         </motion.div>
 
-        {/* Category filter */}
+        {}
         <div className="flex gap-1 p-1 rounded-xl bg-card border border-border w-fit">
           {[["all", "All"], ["indian_index", "Indian"], ["us_index", "US"], ["crypto", "Crypto"], ["commodity_etf", "Commodity"]].map(([key, label]) => (
             <button key={key} onClick={() => setCatFilter(key)}
@@ -102,7 +102,7 @@ export default function LiveMarketsPage() {
           ))}
         </div>
 
-        {/* Ticker Groups */}
+        {}
         {visibleCats.map(cat => (
           grouped[cat] && (
             <motion.div key={cat} variants={item} initial="hidden" animate="show">
@@ -139,7 +139,7 @@ export default function LiveMarketsPage() {
           )
         ))}
 
-        {/* Index Summary */}
+        {}
         {quotes.length > 0 && (
           <motion.div variants={item} initial="hidden" animate="show" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {quotes.filter(q => q.category === "indian_index" || q.category === "us_index").map(q => (

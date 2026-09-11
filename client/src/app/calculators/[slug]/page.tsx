@@ -31,6 +31,7 @@ type Result = { label: string; value: number; format: (v: number) => string; acc
 type CalcConfig = {
   title: string;
   subtitle: string;
+  footnote?: (v: Record<string, number | string>) => string;
   defaults: Record<string, number | string>;
   inputs: Input[];
   compute: (v: Record<string, number | string>) => { results: Result[]; series: { label: string; a: number; b: number }[]; aLabel: string; bLabel: string };
@@ -217,6 +218,11 @@ const CALCS: Record<string, CalcConfig> = {
   tax: {
     title: "Tax Calculator",
     subtitle: "Capital gains tax estimate (FY 2024-25 rules)",
+    footnote: (v) => v.type === "Equity STCG"
+      ? "Equity STCG · 20% flat"
+      : v.type === "Equity LTCG"
+        ? "Equity LTCG · 12.5% above ₹1.25L exemption"
+        : "Debt / other · slab rate, 12.5% if held 2+ years",
     defaults: { gains: 500000, type: "Equity LTCG", years: 2 },
     inputs: [
       { kind: "slider", key: "gains", label: "Total Gains (₹)", min: 10000, max: 50000000, step: 10000, format: inr },
@@ -226,11 +232,10 @@ const CALCS: Record<string, CalcConfig> = {
     compute: (v) => {
       const G = v.gains as number;
       const t = v.type as string;
-      let rate = 0, exempt = 0, note = "";
-      if (t === "Equity STCG") { rate = 0.2; note = "20% flat"; }
-      else if (t === "Equity LTCG") { rate = 0.125; exempt = 125000; note = "12.5% above ₹1.25L"; }
-      else { rate = (v.years as number) >= 2 ? 0.125 : 0.3; note = "slab / 12.5%"; }
-      void note;
+      let rate = 0, exempt = 0;
+      if (t === "Equity STCG") { rate = 0.2; }
+      else if (t === "Equity LTCG") { rate = 0.125; exempt = 125000; }
+      else { rate = (v.years as number) >= 2 ? 0.125 : 0.3; }
       const taxable = Math.max(0, G - exempt);
       const tax = taxable * rate;
       return {
@@ -326,6 +331,9 @@ function CalculatorView({ config }: { config: CalcConfig }) {
                   </div>
                 ))}
               </div>
+              {config.footnote && (
+                <p className="text-xs text-muted-foreground pt-1">{config.footnote(values)}</p>
+              )}
             </GlowCard>
           </motion.div>
 

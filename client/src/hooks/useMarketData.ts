@@ -48,7 +48,7 @@ export interface MarketError {
 }
 
 export interface UseMarketDataOptions {
-  /** Display tickers to subscribe to. Default: auto-subscribe to the REST snapshot. */
+
   tickers?: string[];
   socketUrl?: string;
   restUrl?: string;
@@ -68,14 +68,6 @@ function normalizeTickers(input: unknown): string[] {
   return out;
 }
 
-/**
- * Shared live-market connection. ONE socket.io connection carries every
- * ticker subscription (global market:tick + per-ticker market:tick:{T}).
- *
- * Flow: REST snapshot → socket connect → subscribe → live updates.
- * Socket.io's own reconnection is used; on every (re)connect the full
- * subscription set is re-sent so updates resume automatically.
- */
 export function useMarketData(options: UseMarketDataOptions = {}) {
   const {
     tickers: initialTickers = [],
@@ -187,14 +179,14 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
   );
 
   const fetchSnapshot = useCallback(async () => {
-    // Primary: Day-2 market-service.
+
     try {
       const r = await fetch(`${restUrl}/quotes`);
       if (!r.ok) throw new Error("market-service unavailable");
       const data = await r.json();
       if (Array.isArray(data.quotes) && data.quotes.length > 0) {
         applyTick(data);
-        // Default subscription = everything in the snapshot (server validates).
+
         if (!autoSubbedRef.current && subsRef.current.size === 0) {
           autoSubbedRef.current = true;
           subscribe(data.quotes.map((q: MarketQuote) => q.ticker));
@@ -203,7 +195,7 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
       }
       throw new Error("empty market-service snapshot");
     } catch {
-      // Fallback: main backend ticker universe.
+
       try {
         const r = await fetch(`${fallbackRestUrl}/api/market/tickers`);
         const data: MarketQuote[] = await r.json();
@@ -211,7 +203,7 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
           applyTick({ quotes: data, timestamp: new Date().toISOString() });
         }
       } catch {
-        // Offline — socket may still deliver; stop the skeleton on next tick.
+
       }
     }
   }, [restUrl, fallbackRestUrl, applyTick, subscribe]);
@@ -229,8 +221,6 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
     let fellBack = false;
     let everConnected = false;
 
-    // Deferred past the effect body so the initial REST load never
-    // cascades synchronously off mount.
     const fetchTimer = setTimeout(() => {
       if (!cancelled) void fetchSnapshot();
     }, 0);
@@ -242,7 +232,7 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
         socketRef.current = sock;
         setConnected(true);
         setConnectionState("connected");
-        // (Re)send the full subscription set — restores updates after reconnect.
+
         attachTickerListeners(sock, [...subsRef.current]);
         if (subsRef.current.size > 0) {
           sock.emit("market:subscribe", { tickers: [...subsRef.current] });
@@ -255,7 +245,7 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
         setConnected(stillUp);
         if (!stillUp) setConnectionState("disconnected");
       });
-      // Socket.io auto-retries with backoff; just surface the state.
+
       sock.on("reconnect_attempt", () => {
         if (!cancelled) setConnectionState("reconnecting");
       });
@@ -265,7 +255,7 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
       sock.on("connect_error", () => {
         if (cancelled) return;
         if (!everConnected && !fellBack && !isFallback) {
-          // Primary unreachable on first connect → one-time fallback.
+
           fellBack = true;
           primary?.disconnect();
           primary = null;
@@ -311,7 +301,7 @@ export function useMarketData(options: UseMarketDataOptions = {}) {
       primary = null;
       fallback = null;
     };
-    // Single connection per mount; subscription set lives in refs.
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoConnect, socketUrl, restUrl, fallbackSocketUrl, fallbackRestUrl]);
 

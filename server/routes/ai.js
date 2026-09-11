@@ -4,7 +4,6 @@ const newsAgentService = require('../services/newsAgentService');
 
 const router = express.Router();
 
-// POST /api/ai/chat — Conversational AI chatbot
 router.post('/chat', async (req, res) => {
   try {
     const { message, history } = req.body;
@@ -18,7 +17,6 @@ router.post('/chat', async (req, res) => {
   }
 });
 
-// POST /api/ai/portfolio-doctor — Analyze portfolio health
 router.post('/portfolio-doctor', async (req, res) => {
   try {
     const { holdings } = req.body;
@@ -34,7 +32,6 @@ router.post('/portfolio-doctor', async (req, res) => {
   }
 });
 
-// GET /api/ai/trade-signals — AI-generated trade signals from news
 router.get('/trade-signals', async (req, res) => {
   try {
     const signals = await newsAgentService.getTradeSignals();
@@ -45,7 +42,6 @@ router.get('/trade-signals', async (req, res) => {
   }
 });
 
-// GET /api/ai/news — Sentiment-enriched news feed
 router.get('/news', async (req, res) => {
   try {
     const news = await newsAgentService.getEnrichedNews();
@@ -56,7 +52,6 @@ router.get('/news', async (req, res) => {
   }
 });
 
-// POST /api/ai/sentiment — Analyze single text sentiment
 router.post('/sentiment', async (req, res) => {
   try {
     const { text } = req.body;
