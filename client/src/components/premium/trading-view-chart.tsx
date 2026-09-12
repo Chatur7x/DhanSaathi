@@ -58,6 +58,7 @@ export function TradingViewChart({
   const seriesRef = useRef<AnySeries | null>(null);
   const lastTimeRef = useRef<number>(0);
   const lastCandleRef = useRef<CandlePoint | null>(null);
+  const cursorRef = useRef<{ price: number; time: number } | null>(null);
   const [cursor, setCursor] = useState<{ price: number; time: number } | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -136,22 +137,34 @@ export function TradingViewChart({
 
     chart.subscribeCrosshairMove((param) => {
       if (!param.time || !seriesRef.current) {
-        setCursor(null);
+        if (cursorRef.current !== null) {
+          cursorRef.current = null;
+          setCursor(null);
+        }
         return;
       }
       const v = param.seriesData.get(seriesRef.current) as
         | { value?: number; close?: number }
         | undefined;
       const price = v ? (v.close ?? v.value) : undefined;
+      const time = param.time as number;
+      const prev = cursorRef.current;
       if (typeof price === "number") {
-        setCursor({ price, time: param.time as number });
-      } else {
+        if (!prev || prev.price !== price || prev.time !== time) {
+          const next = { price, time };
+          cursorRef.current = next;
+          setCursor(next);
+        }
+      } else if (prev !== null) {
+        cursorRef.current = null;
         setCursor(null);
       }
     });
 
     const ro = new ResizeObserver(() => {
-      chart.applyOptions({ width: el.clientWidth, height: el.clientHeight });
+      if (el.clientWidth > 0 && el.clientHeight > 0) {
+        chart.applyOptions({ width: el.clientWidth, height: el.clientHeight });
+      }
     });
     ro.observe(el);
 

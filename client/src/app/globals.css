@@ -153,7 +153,6 @@
   }
   html {
     @apply font-sans;
-    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
