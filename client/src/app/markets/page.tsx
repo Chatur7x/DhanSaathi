@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { BarChart3, TrendingUp, Search, WifiOff } from "lucide-react";
 import { GlowCard } from "@/components/premium/glow-card";
+import { TiltCard } from "@/components/premium/tilt-card";
 import { LivePulse } from "@/components/premium/animated-counter";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
@@ -144,13 +145,15 @@ export default function MarketsPage() {
           ))}
           {fGlobal.map((idx) => (
             <Link key={idx.symbol} href={`/markets/${encodeURIComponent(idx.symbol)}`}>
-              <GlowCard glowColor={up(idx.changePercent) ? "#10b981" : "#ef4444"} className="!p-4 cursor-pointer">
+              <TiltCard max={6}>
+              <GlowCard glowColor={up(idx.changePercent) ? "#10b981" : "#ef4444"} className="!p-4 cursor-pointer h-full">
               <p className="eyebrow">{idx.symbol.replace("^", "")}</p>
               <p className="font-display text-[22px] mt-1 tabular-nums">{idx.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
               <p className={`text-xs font-semibold mt-0.5 tabular-nums ${upText(idx.changePercent)}`}>
                 {up(idx.changePercent) ? "+" : ""}{idx.change.toLocaleString("en-US")} ({up(idx.changePercent) ? "+" : ""}{idx.changePercent.toFixed(2)}%)
               </p>
             </GlowCard>
+              </TiltCard>
             </Link>
           ))}
           {!lGlobal && fGlobal.length === 0 && (

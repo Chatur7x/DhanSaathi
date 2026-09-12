@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Wallet, TrendingUp, BarChart3, ArrowUpRight, ShoppingCart, Plus, X, DollarSign } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { GlowCard } from "@/components/premium/glow-card";
+import { TiltCard } from "@/components/premium/tilt-card";
 import { AnimatedCounter, LivePulse } from "@/components/premium/animated-counter";
 import { MagneticButton } from "@/components/premium/magnetic-button";
 import { AppShell } from "@/components/layout/app-shell";
@@ -110,13 +111,15 @@ export default function PortfolioPage() {
             { label: "Returns", value: totalReturns, icon: TrendingUp, color: totalReturns >= 0 ? "#10b981" : "#ef4444" },
             { label: "XIRR", value: xirr, icon: ArrowUpRight, color: "#f59e0b", suffix: "%" },
           ].map((card, i) => (
-            <GlowCard key={i} glowColor={card.color}>
-              <card.icon size={20} style={{ color: card.color }} />
-              <p className="text-[0.65rem] text-muted-foreground uppercase tracking-wider font-semibold mt-2">{card.label}</p>
-              <p className="text-lg font-bold text-foreground mt-0.5">
-                <AnimatedCounter value={card.value} prefix={card.suffix ? "" : "₹"} suffix={card.suffix || ""} decimals={card.suffix ? 1 : 0} />
-              </p>
-            </GlowCard>
+            <TiltCard key={i} max={7}>
+              <GlowCard glowColor={card.color} className="h-full">
+                <card.icon size={20} style={{ color: card.color }} />
+                <p className="text-[0.65rem] text-muted-foreground uppercase tracking-wider font-semibold mt-2">{card.label}</p>
+                <p className="text-lg font-bold text-foreground mt-0.5">
+                  <AnimatedCounter value={card.value} prefix={card.suffix ? "" : "₹"} suffix={card.suffix || ""} decimals={card.suffix ? 1 : 0} />
+                </p>
+              </GlowCard>
+            </TiltCard>
           ))}
         </motion.div>
 

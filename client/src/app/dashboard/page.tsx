@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, ArrowDownRight, Brain, TrendingUp, Wallet, Zap, BarChart3 } from "lucide-react";
 import { TradingViewChart } from "@/components/premium/trading-view-chart";
+import { TiltCard } from "@/components/premium/tilt-card";
 import { GlowCard } from "@/components/premium/glow-card";
 import { AnimatedCounter, LivePulse } from "@/components/premium/animated-counter";
 import { AppShell } from "@/components/layout/app-shell";
@@ -118,6 +119,8 @@ export default function DashboardPage() {
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
         {}
           <motion.section variants={item} className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-8">
+          <div aria-hidden className="animate-float-slow pointer-events-none absolute -top-20 -left-16 w-72 h-48 rounded-full bg-primary/10 blur-3xl" />
+          <div aria-hidden className="animate-float-slow pointer-events-none absolute -bottom-24 -right-12 w-80 h-52 rounded-full bg-emerald-500/10 blur-3xl" style={{ animationDelay: "-7s" }} />
           <div className="relative z-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-3">
@@ -163,13 +166,15 @@ export default function DashboardPage() {
             { label: "Total Returns", value: `+${portfolio.overallPnlPercentage}%`, icon: BarChart3, color: "text-cyan-400", bg: "bg-cyan-500/10" },
             { label: "AI Score", value: "87/100", icon: Zap, color: "text-amber-400", bg: "bg-amber-500/10" },
           ].map((s, i) => (
-            <GlowCard key={i} glowColor={s.color.includes("primary") ? "#d97757" : s.color.includes("emerald") ? "#10b981" : s.color.includes("cyan") ? "#06b6d4" : "#f59e0b"}>
-              <div className={`inline-flex p-2 rounded-lg ${s.bg} mb-3`}>
-                <s.icon size={18} className={s.color} />
-              </div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{s.label}</p>
-              <p className="text-xl font-bold text-foreground mt-0.5">{s.value}</p>
-            </GlowCard>
+            <TiltCard key={i} max={7}>
+              <GlowCard glowColor={s.color.includes("primary") ? "#d97757" : s.color.includes("emerald") ? "#10b981" : s.color.includes("cyan") ? "#06b6d4" : "#f59e0b"} className="h-full">
+                <div className={`inline-flex p-2 rounded-lg ${s.bg} mb-3`}>
+                  <s.icon size={18} className={s.color} />
+                </div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{s.label}</p>
+                <p className="text-xl font-bold text-foreground mt-0.5">{s.value}</p>
+              </GlowCard>
+            </TiltCard>
           ))}
         </motion.div>
 

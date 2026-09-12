@@ -1,6 +1,7 @@
 "use client";
 
 import { Search, Plus, Check, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { searchTickers, type TickerSearchResult } from "@/lib/api";
 
@@ -9,9 +10,10 @@ interface TickerSearchProps {
   isAdded?: (symbol: string) => boolean;
   placeholder?: string;
   autoFocus?: boolean;
+  onFocusChange?: (focused: boolean) => void;
 }
 
-export function TickerSearch({ onSelect, isAdded, placeholder = "Search stocks, crypto, indices…", autoFocus = false }: TickerSearchProps) {
+export function TickerSearch({ onSelect, isAdded, placeholder = "Search stocks, crypto, indices…", autoFocus = false, onFocusChange }: TickerSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<TickerSearchResult[]>([]);
   const [open, setOpen] = useState(false);
@@ -45,11 +47,14 @@ export function TickerSearch({ onSelect, isAdded, placeholder = "Search stocks, 
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        onFocusChange?.(false);
+      }
     };
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
-  }, []);
+  }, [onFocusChange]);
 
   const choose = (t: TickerSearchResult) => {
     onSelect(t);
@@ -76,7 +81,7 @@ export function TickerSearch({ onSelect, isAdded, placeholder = "Search stocks, 
 
   return (
     <div ref={boxRef} className="relative">
-      <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+      <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" />
       <input
         ref={inputRef}
         value={query}
@@ -90,7 +95,8 @@ export function TickerSearch({ onSelect, isAdded, placeholder = "Search stocks, 
             setFailed(false);
           }
         }}
-        onFocus={() => { if (results.length > 0 || failed) setOpen(true); }}
+        onFocus={() => { if (results.length > 0 || failed) setOpen(true); onFocusChange?.(true); }}
+        onBlur={() => onFocusChange?.(false)}
         onKeyDown={onKey}
         placeholder={placeholder}
         aria-label="Search tickers"
@@ -109,12 +115,21 @@ export function TickerSearch({ onSelect, isAdded, placeholder = "Search stocks, 
           <X size={15} />
         </button>
       ) : null}
+      <AnimatePresence>
       {open && (
-        <div id="ticker-search-list" role="listbox" className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-border bg-popover shadow-[var(--paper-shadow)] overflow-hidden z-30 max-h-72 overflow-y-auto">
+        <motion.div
+          id="ticker-search-list"
+          role="listbox"
+          initial={{ opacity: 0, y: -6, scale: 0.99 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -6, scale: 0.99 }}
+          transition={{ type: "spring", stiffness: 500, damping: 34 }}
+          className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-border bg-popover shadow-[var(--paper-shadow)] overflow-hidden z-30 max-h-72 overflow-y-auto"
+        >
           {searching && results.length === 0 ? (
             <div className="px-4 py-3 space-y-2">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="h-9 rounded-lg bg-muted animate-pulse" />
+                <div key={i} className="h-9 rounded-lg bg-muted animate-shimmer" />
               ))}
             </div>
           ) : failed ? (
@@ -125,8 +140,11 @@ export function TickerSearch({ onSelect, isAdded, placeholder = "Search stocks, 
             results.map((t, i) => {
               const added = isAdded?.(t.symbol) ?? false;
               return (
-                <button
+                <motion.button
                   key={`${t.yahooSymbol}-${i}`}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: Math.min(i * 0.03, 0.18), type: "spring", stiffness: 450, damping: 30 }}
                   onClick={() => choose(t)}
                   onMouseEnter={() => setHighlight(i)}
                   role="option"
@@ -142,12 +160,13 @@ export function TickerSearch({ onSelect, isAdded, placeholder = "Search stocks, 
                   <span className={`shrink-0 inline-flex items-center gap-1 text-xs font-semibold ${added ? "text-emerald-600 dark:text-emerald-400" : "text-primary"}`}>
                     {added ? <><Check size={13} /> Added</> : <><Plus size={13} /> Add</>}
                   </span>
-                </button>
+                </motion.button>
               );
             })
           )}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }
