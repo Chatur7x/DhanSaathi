@@ -2,6 +2,59 @@ const YahooFinance = require('yahoo-finance2').default;
 const yahooFinance = new YahooFinance();
 const { getEnabledTickers, getTickerByYahooSymbol } = require('../tickers');
 
+exports.searchTickers = async (query) => {
+  const q = String(query || '').trim();
+  if (q.length < 1 || q.length > 30) {
+    const err = new Error('Search query must be 1-30 characters');
+    err.statusCode = 400;
+    throw err;
+  }
+  const needle = q.toUpperCase();
+  const seen = new Set();
+  const results = [];
+  for (const t of getEnabledTickers()) {
+    if (
+      t.symbol.includes(needle) ||
+      t.yahooSymbol.toUpperCase().includes(needle) ||
+      t.displayName.toUpperCase().includes(needle)
+    ) {
+      seen.add(t.yahooSymbol);
+      results.push({
+        symbol: t.symbol,
+        yahooSymbol: t.yahooSymbol,
+        name: t.displayName,
+        exchange: t.exchange,
+        category: t.category,
+        inUniverse: true,
+      });
+    }
+  }
+  try {
+    const found = await yahooFinance.search(q, { quotesCount: 8, newsCount: 0 }, { validateResult: false });
+    for (const item of found.quotes || []) {
+      if (!item || !item.symbol || seen.has(item.symbol)) continue;
+      if (item.quoteType !== 'EQUITY' && item.quoteType !== 'ETF' && item.quoteType !== 'CRYPTOCURRENCY' && item.quoteType !== 'INDEX') continue;
+      seen.add(item.symbol);
+      results.push({
+        symbol: item.symbol,
+        yahooSymbol: item.symbol,
+        name: item.shortname || item.longname || item.symbol,
+        exchange: item.exchange || null,
+        category: null,
+        inUniverse: false,
+      });
+      if (results.length >= 12) break;
+    }
+  } catch (e) {
+    if (results.length === 0) {
+      const err = new Error(`Ticker search unavailable: ${e.message}`);
+      err.statusCode = 502;
+      throw err;
+    }
+  }
+  return results;
+};
+
 exports.getQuotes = async (symbols) => {
   try {
     if (!symbols || symbols.length === 0) return [];

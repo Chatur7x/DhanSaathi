@@ -128,6 +128,15 @@ app.get('/api/market/tickers', async (req, res) => {
   }
 });
 
+app.get('/api/market/search', async (req, res) => {
+  try {
+    const results = await marketApi.searchTickers(req.query.q || '');
+    res.json(results);
+  } catch (error) {
+    res.status(error.statusCode || 502).json({ error: error.message });
+  }
+});
+
 const externalApi = require('./services/externalApi');
 
 app.get('/api/market/option-chain', async (req, res) => {

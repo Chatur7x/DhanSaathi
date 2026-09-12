@@ -110,3 +110,17 @@ export const getNews = async () => {
   const res = await axios.get(`${API_URL}/api/ai/news`);
   return res.data;
 };
+
+export interface TickerSearchResult {
+  symbol: string;
+  yahooSymbol: string;
+  name: string;
+  exchange: string | null;
+  category: string | null;
+  inUniverse: boolean;
+}
+
+export const searchTickers = async (query: string): Promise<TickerSearchResult[]> => {
+  const res = await axios.get(`${API_URL}/api/market/search`, { params: { q: query } });
+  return res.data;
+};
