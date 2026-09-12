@@ -80,14 +80,18 @@ export function Sidebar() {
         })}
       </nav>
 
-      {}
       <button
         onClick={() => setCollapsed(!collapsed)}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="mx-3 mb-4 p-2 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center justify-center"
+        className="mx-3 mb-2 p-2 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center justify-center"
       >
         {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
       </button>
+      {!collapsed && (
+        <p className="mx-3 mb-3 text-center text-[10px] font-mono text-muted-foreground/50">
+          build {process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local"}
+        </p>
+      )}
     </motion.aside>
   );
 }
