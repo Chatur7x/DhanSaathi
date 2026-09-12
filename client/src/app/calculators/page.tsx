@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Calculator, TrendingUp, Banknote, Target, Percent, BarChart3, PiggyBank, ArrowRight } from "lucide-react";
+import { Calculator, TrendingUp, Banknote, Target, Percent, BarChart3, PiggyBank, ArrowRight, FlaskConical } from "lucide-react";
 import { GlowCard } from "@/components/premium/glow-card";
 import { AppShell } from "@/components/layout/app-shell";
 import Link from "next/link";
@@ -18,6 +18,7 @@ const calculators = [
   { name: "Inflation Calculator", desc: "Understand purchasing power erosion", icon: Percent, color: "#06b6d4", href: "/calculators/inflation" },
   { name: "SWP Calculator", desc: "Systematic withdrawal plan analysis", icon: BarChart3, color: "#ec4899", href: "/calculators/swp" },
   { name: "Tax Calculator", desc: "Capital gains tax estimation (STCG/LTCG)", icon: Banknote, color: "#14b8a6", href: "/calculators/tax" },
+  { name: "Scenario Lab", desc: "Stress-test your plan: crash, job loss, emergency", icon: FlaskConical, color: "#f43f5e", href: "/calculators/scenario" },
 ];
 
 export default function CalculatorsPage() {

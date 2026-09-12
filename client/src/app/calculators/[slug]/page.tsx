@@ -248,6 +248,67 @@ const CALCS: Record<string, CalcConfig> = {
       };
     },
   },
+  scenario: {
+    title: "Scenario Lab",
+    subtitle: "Stress-test your plan against real-world shocks",
+    footnote: (v) => {
+      const s = v.shock as string;
+      if (s === "Job loss") return "Shock: contributions drop to zero, savings compound untouched.";
+      if (s === "Market crash") return "Shock: returns run at −20% annually for the full horizon.";
+      if (s === "Rate +5 pts") return "Shock: annual return shifts up 5 points (e.g. hikes lifting yields).";
+      if (s === "Emergency −₹50k") return "Shock: a one-time ₹50,000 withdrawal on day one.";
+      if (s === "Savings −50%") return "Shock: monthly contribution halves for the full horizon.";
+      return "Baseline projection with no shock applied.";
+    },
+    defaults: { savings: 500000, monthly: 25000, years: 10, rate: 12, shock: "None" },
+    inputs: [
+      { kind: "slider", key: "savings", label: "Current Savings (₹)", min: 0, max: 20000000, step: 50000, format: inr },
+      { kind: "slider", key: "monthly", label: "Monthly Contribution (₹)", min: 0, max: 500000, step: 1000, format: inr },
+      { kind: "slider", key: "years", label: "Horizon", min: 1, max: 40, step: 1, format: yrs },
+      { kind: "slider", key: "rate", label: "Expected Return (%)", min: -20, max: 30, step: 0.5, format: pct1 },
+      { kind: "choice", key: "shock", label: "Shock", options: ["None", "Job loss", "Market crash", "Rate +5 pts", "Emergency −₹50k", "Savings −50%"] },
+    ],
+    compute: (v) => {
+      const P = v.savings as number;
+      const pmt = v.monthly as number;
+      const n = v.years as number;
+      const shock = v.shock as string;
+      let r = (v.rate as number) / 100;
+      let p2 = pmt;
+      let lump2 = P;
+      if (shock === "Job loss") p2 = 0;
+      else if (shock === "Market crash") r = -0.20;
+      else if (shock === "Rate +5 pts") r = r + 0.05;
+      else if (shock === "Emergency −₹50k") lump2 = Math.max(0, P - 50000);
+      else if (shock === "Savings −50%") p2 = pmt * 0.5;
+      const r0 = (v.rate as number) / 100;
+      const fv = (lump: number, monthly: number, rate: number, months: number) => {
+        if (months <= 0) return lump;
+        if (rate === 0) return lump + monthly * months;
+        const g = Math.pow(1 + rate, months);
+        return lump * g + monthly * ((g - 1) / rate);
+      };
+      const series = Array.from({ length: n }, (_, i) => {
+        const m = (i + 1) * 12;
+        return {
+          label: `Y${i + 1}`,
+          a: Math.round(Math.max(0, fv(P, pmt, r0 / 12, m))),
+          b: Math.round(Math.max(0, fv(lump2, p2, r / 12, m))),
+        };
+      });
+      const base = series.length > 0 ? series[series.length - 1].a : P;
+      const shocked = series.length > 0 ? series[series.length - 1].b : lump2;
+      const delta = shocked - base;
+      return {
+        results: [
+          { label: "Baseline", value: base, format: inr },
+          { label: "After Shock", value: shocked, format: inr, accent: "text-primary" },
+          { label: "Delta", value: delta, format: (x) => `${x < 0 ? "−₹" : "+₹"}${Math.round(Math.abs(x)).toLocaleString("en-IN")}`, accent: delta < 0 ? "text-red-500" : "text-emerald-500" },
+        ],
+        series, aLabel: "Baseline", bLabel: "Shocked",
+      };
+    },
+  },
 };
 
 export default function CalculatorSlugPage() {

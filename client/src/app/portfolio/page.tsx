@@ -10,7 +10,7 @@ import { MagneticButton } from "@/components/premium/magnetic-button";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { useLocalStorage } from "@/lib/store";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.07 } } };
 const item = { hidden: { opacity: 0, y: 20, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring" as const, stiffness: 300, damping: 25 } } };
@@ -81,6 +81,31 @@ export default function PortfolioPage() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
+  const health = useMemo(() => {
+    if (holdings.length === 0) return null;
+    const vals = holdings.map((h) => ({ type: h.type, value: h.qty * h.currentPrice }));
+    const total = vals.reduce((s, h) => s + h.value, 0);
+    if (total <= 0) return null;
+    const div = vals.length === 1 ? 10 : vals.length === 2 ? 20 : vals.length === 3 ? 28 : 35;
+    const maxPct = Math.max(...vals.map((h) => (h.value / total) * 100));
+    const conc = maxPct > 85 ? 5 : maxPct > 60 ? 15 : maxPct > 40 ? 25 : maxPct > 25 ? 30 : 35;
+    const growth = (vals.filter((h) => ["Equity", "IT", "ETF"].includes(h.type)).reduce((s, h) => s + h.value, 0) / total) * 100;
+    const align = growth < 30 || growth > 70 ? 20 : 30;
+    const score = div + conc + align;
+    return {
+      score,
+      maxPct,
+      growth,
+      label: score >= 70 ? "Strong" : score >= 50 ? "Balanced" : score >= 30 ? "Concentrated" : "Fragile",
+      pillars: [
+        { label: "Diversification", value: div, max: 35 },
+        { label: "Concentration", value: conc, max: 35 },
+        { label: "Risk fit", value: align, max: 30 },
+      ],
+    };
+  }, [holdings]);
+  const healthColor = !health ? "#a39a8b" : health.score >= 70 ? "#10b981" : health.score >= 50 ? "#f59e0b" : "#ef4444";
+
   return (
     <AppShell>
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -122,6 +147,56 @@ export default function PortfolioPage() {
             </TiltCard>
           ))}
         </motion.div>
+
+        {health && (
+          <motion.div variants={item}>
+            <GlowCard glowColor={healthColor}>
+              <div className="flex items-center gap-5">
+                <div className="relative w-20 h-20 shrink-0">
+                  <svg className="w-20 h-20 -rotate-90" viewBox="0 0 36 36">
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--input)" strokeWidth="3" />
+                    <motion.path
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none" stroke={healthColor} strokeWidth="3" strokeLinecap="round"
+                      initial={{ strokeDasharray: "0 100" }}
+                      animate={{ strokeDasharray: `${health.score} 100` }}
+                      transition={{ duration: 1.2, ease: "easeOut" }}
+                    />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-lg font-bold tabular-nums">{health.score}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h3 className="font-display text-[17px]">Portfolio Health</h3>
+                    <span className="text-xs font-bold" style={{ color: healthColor }}>{health.label}</span>
+                  </div>
+                  <div className="space-y-2 mt-3">
+                    {health.pillars.map((p) => (
+                      <div key={p.label}>
+                        <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
+                          <span>{p.label}</span>
+                          <span className="tabular-nums font-semibold">{p.value}/{p.max}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-accent overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(p.value / p.max) * 100}%` }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                            className="h-full rounded-full"
+                            style={{ background: healthColor }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/70 mt-2.5">
+                    Largest position {health.maxPct.toFixed(1)}% · growth assets {health.growth.toFixed(0)}% · assumes a moderate risk profile.
+                  </p>
+                </div>
+              </div>
+            </GlowCard>
+          </motion.div>
+        )}
 
         {}
         <motion.div variants={item} className="flex gap-1 p-1 rounded-xl bg-card border border-border">
